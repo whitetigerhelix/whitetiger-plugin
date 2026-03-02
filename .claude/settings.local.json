@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C \"d:/whitetigerhelix/whitetiger-plugin\" log --oneline --all)"
+    ]
+  }
+}
