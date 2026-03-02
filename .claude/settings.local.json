@@ -5,7 +5,8 @@
       "Bash(\"C:/Users/chroje/AppData/Local/Programs/Python/Python312/python.exe\" -m venv d:/whitetigerhelix/whitetiger-plugin/service/.venv)",
       "Bash(d:/whitetigerhelix/whitetiger-plugin/service/.venv/Scripts/python.exe -m pip install:*)",
       "Bash(d:/whitetigerhelix/whitetiger-plugin/service/.venv/Scripts/pip.exe install:*)",
-      "Bash(.venv/Scripts/python.exe -m pytest tests/ -v)"
+      "Bash(.venv/Scripts/python.exe -m pytest tests/ -v)",
+      "Bash(.venv/Scripts/python.exe -m pytest tests/ -v --tb=short)"
     ]
   }
 }

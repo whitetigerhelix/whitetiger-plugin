@@ -18,6 +18,7 @@ Detailed specs and reference material live in `Docs/`. Always consult these rath
 - [Docs/Setup_Guide.md](Docs/Setup_Guide.md) — prerequisites, env vars, running the service, troubleshooting
 - [Docs/AI_Groove_Writer_Project_Plan.md](Docs/AI_Groove_Writer_Project_Plan.md) — full MVP spec (primary source of truth)
 - [Docs/Work_Plan.md](Docs/Work_Plan.md) — implementation roadmap, milestones, decision log
+- [Docs/M4L_Build_Guide.md](Docs/M4L_Build_Guide.md) — step-by-step Max for Live device building instructions
 - [Docs/Ideas_and_Brainstorm.md](Docs/Ideas_and_Brainstorm.md) — future vision and brainstorm ideas
 
 ## Key Conventions
@@ -33,18 +34,25 @@ Detailed specs and reference material live in `Docs/`. Always consult these rath
 
 ```
 m4l/                         Max for Live device
-  AIGrooveWriter.amxd
-  patches/                   Sub-patches (ui, http, clip_writer, post_process)
+  patches/                   .amxd device (built manually in Max editor)
+  js/                        JS objects for Max's `js` runtime
+    groove_http.js           HTTP client (POST /generate, GET /health etc.)
+    note_writer.js           Clip writer (Live API note insertion)
+    post_process.js          Swing, humanize, velocity jitter (seeded RNG)
 service/                     Python FastAPI service (.venv/ for virtual env)
   app.py                     FastAPI entry point (/health, /generate, /presets, /usage)
   models.py                  Pydantic v2 request/response models
   presets.py                 Preset registry (5 presets, defaults, prompt templates)
   mock_grooves.py            Hardcoded mock groove patterns for dev
+  prompts.py                 System + user prompt construction for LLM
+  validation.py              LLM response parsing, JSON extraction, note clamping
+  cache.py                   Disk cache (SHA-256 keyed)
+  llm_provider.py            Provider abstraction (Azure OpenAI, Anthropic stub)
   usage.py                   LLM credit consumption tracking
   requirements.txt           Python dependencies
   setup.sh                   Setup script (venv + deps + tests)
   .env.example               Environment variable template
-  tests/                     pytest test suite (33 tests)
+  tests/                     pytest test suite (92 tests)
 Docs/                        Documentation (source of truth)
 ```
 

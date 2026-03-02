@@ -2,7 +2,7 @@
 
 Endpoints:
   GET  /health   → {"ok": true}
-  POST /generate → GenerateResponse (mock mode for now)
+  POST /generate → GenerateResponse (mock or real LLM)
   GET  /presets  → list of available presets
   GET  /usage    → usage statistics for LLM credit tracking
 
@@ -13,18 +13,27 @@ Canonical references:
 
 from __future__ import annotations
 
+import logging
 import os
 import time
 
 from dotenv import load_dotenv
 from fastapi import FastAPI
 
+from cache import cache_get, cache_key, cache_put
+from llm_provider import estimate_cost, get_provider
 from mock_grooves import get_mock_groove
 from models import GenerateRequest, GenerateResponse, MidiPlan
 from presets import get_preset, list_presets
+from prompts import build_system_prompt, build_user_prompt
 from usage import get_usage_summary, log_usage
+from validation import parse_llm_response
 
 load_dotenv()
+
+log = logging.getLogger(__name__)
+
+MAX_LLM_RETRIES = 3
 
 app = FastAPI(
     title="AI Groove Writer Service",
@@ -86,14 +95,83 @@ def generate(req: GenerateRequest) -> GenerateResponse:
         )
         return GenerateResponse(ok=True, summary=summary, plan=plan)
 
-    # TODO: LLM integration (Milestone 4)
-    # 1. Build prompt from preset template + user prompt + controls
-    # 2. Check cache
-    # 3. Call LLM provider
-    # 4. Parse and validate response
-    # 5. Log usage with real token counts
-    # 6. Return GenerateResponse
+    # --- Real LLM path ---
+
+    # 1. Check disk cache
+    key = cache_key(req)
+    cached_response = cache_get(key)
+    if cached_response is not None:
+        duration_ms = int((time.monotonic() - start_time) * 1000)
+        log_usage(
+            provider="cache",
+            model="cache",
+            prompt_tokens=0,
+            completion_tokens=0,
+            preset_id=req.preset_id,
+            bars=req.clip.bars,
+            cached=True,
+            duration_ms=duration_ms,
+        )
+        return cached_response
+
+    # 2. Build prompts
+    system_prompt = build_system_prompt()
+    user_prompt = build_user_prompt(preset, req)
+
+    # 3. Get LLM provider
+    try:
+        provider = get_provider()
+    except ValueError as e:
+        return GenerateResponse(ok=False, error=str(e))
+
+    # 4. Call LLM with retry on parse failure
+    last_error = ""
+    for attempt in range(1, MAX_LLM_RETRIES + 1):
+        try:
+            result = provider.generate(system_prompt, user_prompt)
+        except Exception as e:
+            last_error = f"LLM call failed: {e}"
+            log.warning("LLM call attempt %d failed: %s", attempt, e)
+            continue
+
+        try:
+            plan = parse_llm_response(result.text, req.clip)
+        except ValueError as e:
+            last_error = f"LLM response parse failed (attempt {attempt}): {e}"
+            log.warning("Parse attempt %d failed: %s", attempt, e)
+            continue
+
+        # Success — build response, cache it, log usage
+        note_count = len(plan.notes)
+        cost = estimate_cost(result.model, result.prompt_tokens, result.completion_tokens)
+        summary = (
+            f"{note_count} notes, {plan.bars} bars | "
+            f"{result.provider}:{result.model} | "
+            f"{result.prompt_tokens}+{result.completion_tokens} tokens | "
+            f"${cost:.4f}"
+        )
+
+        response = GenerateResponse(ok=True, summary=summary, plan=plan)
+
+        cache_put(key, response)
+
+        duration_ms = int((time.monotonic() - start_time) * 1000)
+        log_usage(
+            provider=result.provider,
+            model=result.model,
+            prompt_tokens=result.prompt_tokens,
+            completion_tokens=result.completion_tokens,
+            estimated_cost_usd=cost,
+            preset_id=req.preset_id,
+            bars=req.clip.bars,
+            cached=False,
+            duration_ms=duration_ms,
+        )
+
+        return response
+
+    # All retries exhausted
     return GenerateResponse(
         ok=False,
-        error="LLM integration not yet implemented. Set SERVICE_MOCK=1 for mock mode.",
+        error=f"Failed after {MAX_LLM_RETRIES} attempts. Last error: {last_error}",
     )

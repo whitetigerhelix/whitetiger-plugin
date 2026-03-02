@@ -26,42 +26,47 @@ Implementation roadmap for AI Groove Writer. Milestones are roughly sequential, 
 - [x] Implement `service/usage.py` — LLM credit consumption tracking (JSONL log + stats)
 - [x] Tests: 33 tests passing (models + endpoints)
 
-### Milestone 3: M4L Device — Clip Writing Pipeline
+### Milestone 3: M4L Device — Clip Writing Pipeline (scaffolding ✓, manual patching required)
 
-- [ ] M4L device skeleton (`AIGrooveWriter.amxd`)
-- [ ] UI patch: prompt input, preset dropdown, control dials, status text, buttons
-- [ ] Clip target: resolve highlighted clip slot, create clip when requested
-- [ ] HTTP client: send JSON POST to localhost service via `maxurl`
-- [ ] JSON parser: parse `GenerateResponse`
-- [ ] Note writer: `remove_notes` → `set_notes` → `done` via Live API
-- [ ] Validate end-to-end with mock service response
+- [x] JS helper files created in `m4l/js/`:
+  - [x] `groove_http.js` — HTTP client (GET/POST to service, outlets for response + status)
+  - [x] `note_writer.js` — clip writer (Live API: highlighted clip slot → remove/write notes)
+  - [x] `post_process.js` — swing, humanize, velocity jitter (seeded RNG, all in Max)
+- [x] Build guide: [M4L_Build_Guide.md](M4L_Build_Guide.md) — step-by-step Max patching instructions
+- [ ] **Manual:** Create M4L device skeleton (`AIGrooveWriter.amxd`) — requires Max editor
+- [ ] **Manual:** Wire UI patch (prompt, preset dropdown, control dials, status, buttons)
+- [ ] **Manual:** Connect JS objects per wiring diagram in build guide
+- [ ] **Manual:** Validate end-to-end with mock service response
 
-### Milestone 4: LLM Integration
+### Milestone 4: LLM Integration ✓
 
-- [ ] Design provider abstraction layer (interface for swappable LLM backends)
-- [ ] Implement first provider (Azure OpenAI GPT-4o — or chosen alternative)
-- [ ] Prompt construction: system prompt + preset template + user prompt + controls
-- [ ] JSON response parsing with retry on malformed output
-- [ ] Note validation and clamping to clip boundaries
-- [ ] Max note count enforcement (5000)
+- [x] Provider abstraction layer (`service/llm_provider.py`): `LLMProvider` ABC, `LLMResult` dataclass, `get_provider()` factory
+- [x] Azure OpenAI provider (`AzureOpenAIProvider`) — reads env vars, calls `openai` SDK
+- [x] Anthropic provider stub (`AnthropicProvider`) — raises NotImplementedError with helpful message
+- [x] Prompt construction (`service/prompts.py`): system prompt (strict JSON output rules) + user prompt (preset template filling)
+- [x] Response parsing and validation (`service/validation.py`): JSON extraction (handles code fences, preamble), note clamping to clip bounds
+- [x] Max note count enforcement (5000)
+- [x] Disk cache (`service/cache.py`): SHA-256 keyed, JSON on disk
+- [x] LLM call retry (up to 3 attempts on parse failure)
+- [x] Cost estimation: per-model pricing lookup table
+- [x] `service/app.py` wired with full LLM path: cache check → prompt build → LLM call → validate → cache put → usage log
+- [x] 92 tests passing (models, endpoints, prompts, validation, cache, provider)
 
-### Milestone 5: Post-Processing & Determinism
+### Milestone 5: Post-Processing & Determinism (mostly done via M3 JS)
 
-- [ ] Swing algorithm in M4L
-  - Off-beat 8ths: full delay (`swing × 1/6 beats`)
-  - 16th positions: half delay
-- [ ] Humanize timing: seeded RNG, ms→beats conversion (`humanize_ms / (60000/bpm)`)
-- [ ] Velocity jitter: seeded random ±offset, clamped 1–127
+- [x] Swing algorithm in `post_process.js` — off-beat 8ths get full delay, 16ths get half
+- [x] Humanize timing: seeded xorshift32 RNG, ms→beats conversion
+- [x] Velocity jitter: seeded random ±offset, clamped 1–127
 - [ ] Seed reproducibility verification (same seed + request = same output)
 - [ ] Variation mode: seed increment for iterative exploration
 
-### Milestone 6: Caching & Reliability
+### Milestone 6: Caching & Reliability (mostly done via M4)
 
-- [ ] Disk cache: SHA-256 hash of request → `service/cache/<hash>.json`
-- [ ] Retry policy for LLM JSON parse failures (configurable retry count)
-- [ ] Graceful error handling: service errors → `GenerateResponse` with `ok=false` + message
+- [x] Disk cache: SHA-256 hash of request → `service/cache/<hash>.json`
+- [x] Retry policy for LLM JSON parse failures (3 retries)
+- [x] Graceful error handling: service errors → `GenerateResponse` with `ok=false` + message
 - [ ] Timeout handling with fallback to last cached result
-- [ ] Basic logging (request/response, errors, cache hits/misses)
+- [x] Logging (request/response, errors, cache hits/misses via usage.py)
 
 ### Milestone 7: Presets & UX Polish
 
