@@ -11,6 +11,7 @@ build/
 
 # Service
 service/cache/
+service/usage_log.jsonl
 .env
 .env.*
 

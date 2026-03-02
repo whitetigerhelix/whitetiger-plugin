@@ -41,14 +41,51 @@ SERVICE_MOCK=0
 | `SERVICE_PORT` | Service listen port | `8787` | No |
 | `SERVICE_MOCK` | Enable mock mode (no LLM calls) | `0` | No |
 
+## First-Time Setup
+
+A setup script handles virtual environment creation, dependency installation, and verification. A virtual environment is required (other Python projects exist on this machine).
+
+```bash
+cd service
+
+# Run the setup script (creates venv, installs deps, copies .env, runs tests)
+./setup.sh
+
+# If your Python 3.12+ isn't the default `python`, specify it:
+PYTHON="C:/Users/chroje/AppData/Local/Programs/Python/Python312/python.exe" ./setup.sh
+```
+
+The script:
+1. Verifies Python 3.12+ is available
+2. Creates `.venv/` virtual environment (if it doesn't exist)
+3. Upgrades pip and installs dependencies from `requirements.txt`
+4. Copies `.env.example` to `.env` (if `.env` doesn't exist yet)
+5. Runs all tests to verify everything works
+
+**Re-run anytime** to update dependencies or verify the environment after pulling changes.
+
+### Manual Setup
+
+```bash
+cd service
+python -m venv .venv
+
+# Activate (Windows cmd)
+.venv\Scripts\activate
+
+# Activate (Git Bash on Windows)
+source .venv/Scripts/activate
+
+pip install -r requirements.txt
+```
+
+The venv is at `service/.venv/` and is gitignored.
+
 ## Starting the Service
 
 ```bash
-# Install dependencies
+# Make sure venv is activated, then:
 cd service
-pip install -r requirements.txt
-
-# Start the service
 uvicorn app:app --host 127.0.0.1 --port 8787
 
 # With auto-reload for development
@@ -85,7 +122,19 @@ Mock mode returns hardcoded groove patterns, useful for testing the full pipelin
 
 ```bash
 cd service
-pytest
+pytest -v
+```
+
+## Usage Tracking
+
+The service tracks LLM credit consumption to help monitor costs.
+
+- **Usage log:** `service/usage_log.jsonl` (gitignored) — each LLM call logged with tokens, cost, model, preset
+- **Usage endpoint:** `GET /usage` returns summary stats (total requests, tokens, cost by model and preset)
+- **Presets endpoint:** `GET /presets` returns all available presets with default control values
+
+```bash
+curl http://127.0.0.1:8787/usage
 ```
 
 ## Troubleshooting

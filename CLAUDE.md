@@ -35,31 +35,39 @@ Detailed specs and reference material live in `Docs/`. Always consult these rath
 m4l/                         Max for Live device
   AIGrooveWriter.amxd
   patches/                   Sub-patches (ui, http, clip_writer, post_process)
-service/                     Python FastAPI service
-  app.py                     FastAPI entry point
+service/                     Python FastAPI service (.venv/ for virtual env)
+  app.py                     FastAPI entry point (/health, /generate, /presets, /usage)
   models.py                  Pydantic v2 request/response models
-  azure_client.py            LLM provider implementation(s)
-  prompts.py                 Prompt template construction
-  presets.py                 Preset registry (IDs, defaults, templates)
-  cache.py                   Disk cache (SHA-256 keyed)
-  requirements.txt
+  presets.py                 Preset registry (5 presets, defaults, prompt templates)
+  mock_grooves.py            Hardcoded mock groove patterns for dev
+  usage.py                   LLM credit consumption tracking
+  requirements.txt           Python dependencies
+  setup.sh                   Setup script (venv + deps + tests)
+  .env.example               Environment variable template
+  tests/                     pytest test suite (33 tests)
 Docs/                        Documentation (source of truth)
 ```
 
 ## Development Commands
 
 ```bash
-# Start the service
+# First-time setup (or re-run to update)
+cd service && PYTHON="path/to/python3.12" ./setup.sh
+
+# Activate venv (Git Bash on Windows)
+source service/.venv/Scripts/activate
+
+# Start the service (mock mode — default, no LLM calls)
 cd service && uvicorn app:app --host 127.0.0.1 --port 8787 --reload
 
 # Health check
 curl http://127.0.0.1:8787/health
 
-# Mock mode (no LLM calls)
-SERVICE_MOCK=1 uvicorn app:app --host 127.0.0.1 --port 8787
+# Check usage stats
+curl http://127.0.0.1:8787/usage
 
 # Run tests
-cd service && pytest
+cd service && .venv/Scripts/python.exe -m pytest tests/ -v
 ```
 
 ## What NOT To Do

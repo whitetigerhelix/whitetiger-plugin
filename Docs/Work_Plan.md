@@ -6,21 +6,25 @@ Implementation roadmap for AI Groove Writer. Milestones are roughly sequential, 
 
 ## MVP Milestones
 
-### Milestone 1: Project Scaffolding
+### Milestone 1: Project Scaffolding ✓
 
 - [x] Project plan document ([AI_Groove_Writer_Project_Plan.md](AI_Groove_Writer_Project_Plan.md))
-- [ ] Documentation foundation (Architecture, Setup Guide, JSON Contract, Ideas, Work Plan)
-- [ ] README, CLAUDE.md, /groove skill, .gitignore
-- [ ] Repo structure: create `m4l/patches/`, `service/` directories
+- [x] Documentation foundation (Architecture, Setup Guide, JSON Contract, Ideas, Work Plan)
+- [x] README, CLAUDE.md, /groove skill, .gitignore
+- [x] Repo structure: create `m4l/patches/`, `service/` directories
+- [x] License changed to AGPL-3.0
 
-### Milestone 2: Python Service — Mock Mode
+### Milestone 2: Python Service — Mock Mode ✓
 
-- [ ] Set up Python project (`pyproject.toml` or `requirements.txt`)
-- [ ] Dependencies: FastAPI, Pydantic v2, uvicorn
-- [ ] Implement `service/models.py` — Pydantic request/response models (see [JSON Contract](JSON_Contract.md))
-- [ ] Implement `service/app.py` — `/health` and `/generate` endpoints, mock grooves
-- [ ] Implement `service/presets.py` — preset registry (IDs, defaults, prompt templates)
-- [ ] Basic tests for models and endpoint responses
+- [x] Set up Python project (`pyproject.toml`, `requirements.txt`)
+- [x] Dependencies: FastAPI, Pydantic v2, uvicorn, python-dotenv
+- [x] Virtual environment: `service/.venv/` (Python 3.12.10)
+- [x] Implement `service/models.py` — Pydantic v2 request/response models
+- [x] Implement `service/app.py` — `/health`, `/generate`, `/presets`, `/usage` endpoints
+- [x] Implement `service/presets.py` — all 5 preset registrations with prompt templates
+- [x] Implement `service/mock_grooves.py` — musically sensible mock patterns per preset
+- [x] Implement `service/usage.py` — LLM credit consumption tracking (JSONL log + stats)
+- [x] Tests: 33 tests passing (models + endpoints)
 
 ### Milestone 3: M4L Device — Clip Writing Pipeline
 

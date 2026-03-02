@@ -1,0 +1,9 @@
+[project]
+name = "ai-groove-writer-service"
+version = "0.1.0"
+description = "Local companion service for AI Groove Writer (Max for Live)"
+requires-python = ">=3.12"
+license = "AGPL-3.0-or-later"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

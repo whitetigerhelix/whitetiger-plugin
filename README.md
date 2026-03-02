@@ -24,16 +24,22 @@ See [Docs/Architecture.md](Docs/Architecture.md) for full details.
 
 ## Quick Start
 
-1. **Configure environment** — Copy `service/.env.example` to `service/.env` and fill in your LLM credentials. See [Docs/Setup_Guide.md](Docs/Setup_Guide.md).
-
-2. **Start the service**
+1. **Run setup** — Creates virtual environment and installs dependencies:
    ```bash
    cd service
-   pip install -r requirements.txt
+   ./setup.sh
+   ```
+
+2. **Configure environment** — Copy `service/.env.example` to `service/.env` and fill in your LLM credentials. See [Docs/Setup_Guide.md](Docs/Setup_Guide.md).
+
+3. **Start the service**
+   ```bash
+   cd service
+   source .venv/Scripts/activate   # or .venv\Scripts\activate on Windows cmd
    uvicorn app:app --host 127.0.0.1 --port 8787
    ```
 
-3. **Load in Ableton** — Drag `m4l/AIGrooveWriter.amxd` onto a MIDI track with a Drum Rack. Select a clip slot, choose a preset, generate.
+4. **Load in Ableton** — Drag `m4l/AIGrooveWriter.amxd` onto a MIDI track with a Drum Rack. Select a clip slot, choose a preset, generate.
 
 ## Repo Layout
 
@@ -43,13 +49,14 @@ whitetiger-plugin/
     AIGrooveWriter.amxd
     patches/
   service/                     Python FastAPI service
-    app.py
-    models.py
-    azure_client.py
-    prompts.py
-    presets.py
-    cache.py
+    app.py                     FastAPI entry point
+    models.py                  Pydantic v2 request/response models
+    presets.py                 Preset registry (5 presets)
+    mock_grooves.py            Mock groove patterns for dev
+    usage.py                   LLM credit tracking
     requirements.txt
+    setup.sh                   Setup script (venv + deps)
+    tests/                     pytest test suite
   Docs/                        Documentation (source of truth)
 ```
 
