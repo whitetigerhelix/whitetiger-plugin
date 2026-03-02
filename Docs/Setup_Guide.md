@@ -39,7 +39,9 @@ SERVICE_MOCK=0
 | `ANTHROPIC_API_KEY` | Anthropic API key | — | Yes (if using Anthropic) |
 | `ANTHROPIC_MODEL` | Anthropic model ID | — | Yes (if using Anthropic) |
 | `SERVICE_PORT` | Service listen port | `8787` | No |
-| `SERVICE_MOCK` | Enable mock mode (no LLM calls) | `0` | No |
+| `SERVICE_MOCK` | Enable mock mode (no LLM calls) | `1` | No |
+| `LLM_PROVIDER` | LLM backend (`azure` or `anthropic`) | `azure` | No |
+| `LLM_TIMEOUT_SECONDS` | Timeout per LLM request (seconds) | `30` | No |
 
 ## First-Time Setup
 

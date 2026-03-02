@@ -32,6 +32,7 @@ class GenerateRequest(BaseModel):
     clip: ClipInfo = Field(default_factory=ClipInfo)
     controls: Controls = Field(default_factory=Controls)
     seed: int = 12345
+    variation: int = Field(default=0, ge=0)
     drum_map: Literal["gm"] = "gm"
 
 

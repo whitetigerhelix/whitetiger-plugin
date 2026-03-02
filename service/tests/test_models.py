@@ -122,6 +122,7 @@ class TestGenerateRequest:
         assert req.mode == "drums"
         assert req.drum_map == "gm"
         assert req.seed == 12345
+        assert req.variation == 0
 
     def test_full_request(self):
         req = GenerateRequest(
@@ -133,6 +134,18 @@ class TestGenerateRequest:
         )
         assert req.clip.bars == 4
         assert req.controls.density == 0.3
+
+    def test_variation_default(self):
+        req = GenerateRequest(prompt="test", preset_id="breaks_atmos_130")
+        assert req.variation == 0
+
+    def test_variation_accepts_positive(self):
+        req = GenerateRequest(prompt="test", preset_id="breaks_atmos_130", variation=5)
+        assert req.variation == 5
+
+    def test_variation_rejects_negative(self):
+        with pytest.raises(Exception):
+            GenerateRequest(prompt="test", preset_id="breaks_atmos_130", variation=-1)
 
 
 class TestMidiPlan:

@@ -90,3 +90,16 @@ class TestUserPrompt:
         prompt = build_user_prompt(preset, req)
         assert "0.8" in prompt   # density
         assert "0.6" in prompt   # complexity
+
+    def test_effective_seed_overrides_request_seed(self):
+        preset = get_preset("breaks_atmos_130")
+        req = self._make_request()  # seed=42
+        prompt = build_user_prompt(preset, req, effective_seed=99)
+        assert "Seed: 99" in prompt
+        assert "Seed: 42" not in prompt
+
+    def test_effective_seed_none_uses_request_seed(self):
+        preset = get_preset("breaks_atmos_130")
+        req = self._make_request()  # seed=42
+        prompt = build_user_prompt(preset, req)
+        assert "Seed: 42" in prompt

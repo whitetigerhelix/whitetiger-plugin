@@ -106,6 +106,24 @@ Post-processing happens entirely in the M4L device, not in the LLM. This keeps t
 
 All randomization uses the request's `seed` value for reproducibility. Same seed + same request = same output.
 
+## Variation Mode
+
+The `variation` field on `GenerateRequest` lets users iterate on the same prompt without changing it. The service computes an **effective seed** = `seed + variation`, which is passed to the LLM prompt and produces a different cache key. This means:
+
+- `variation=0` (default) uses the seed as-is
+- `variation=1, 2, 3...` each produce a fresh LLM call and a separate cache entry
+- The M4L device can expose a "Next Variation" button that increments the counter
+
+## Timeout & Fallback
+
+The LLM call has a configurable timeout (`LLM_TIMEOUT_SECONDS` env var, default 30s). If all 3 retry attempts fail (timeout, network error, or JSON parse failure), the service attempts a **cached fallback**:
+
+1. If `variation > 0`, look up the cached response for `variation=0` (the "base" result)
+2. If found, return it with `[fallback]` prefix in the summary
+3. If no fallback available, return an error response
+
+This ensures users see *something* even if the LLM is slow or unreachable, as long as a base variation was previously cached.
+
 ## Security Boundary
 
 - API keys and secrets live **only** in the Python service, loaded from environment variables

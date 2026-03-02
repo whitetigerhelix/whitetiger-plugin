@@ -41,10 +41,20 @@ def build_system_prompt() -> str:
     return SYSTEM_PROMPT
 
 
-def build_user_prompt(preset: Preset, request: GenerateRequest) -> str:
-    """Build the user prompt by filling preset template placeholders."""
+def build_user_prompt(
+    preset: Preset,
+    request: GenerateRequest,
+    *,
+    effective_seed: int | None = None,
+) -> str:
+    """Build the user prompt by filling preset template placeholders.
+
+    If effective_seed is provided, it overrides request.seed in the prompt.
+    This supports variation mode (seed + variation offset).
+    """
     clip = request.clip
     controls = request.controls
+    seed = effective_seed if effective_seed is not None else request.seed
 
     clip_length_beats = clip.bars * clip.time_sig_num * (4.0 / clip.time_sig_den)
 
@@ -59,6 +69,6 @@ def build_user_prompt(preset: Preset, request: GenerateRequest) -> str:
     )
 
     prompt += f"\n\nClip length: {clip_length_beats} quarter-note beats."
-    prompt += f"\nSeed: {request.seed}"
+    prompt += f"\nSeed: {seed}"
 
     return prompt

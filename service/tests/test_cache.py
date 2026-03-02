@@ -76,6 +76,11 @@ class TestCacheKey:
         assert len(key) == 64  # SHA-256 hex digest
         assert all(c in "0123456789abcdef" for c in key)
 
+    def test_different_variation_different_key(self):
+        r1 = _make_request(variation=0)
+        r2 = _make_request(variation=1)
+        assert cache_key(r1) != cache_key(r2)
+
 
 class TestCacheGetPut:
     def test_miss_returns_none(self, tmp_path: Path):

@@ -27,6 +27,7 @@ def cache_key(request: GenerateRequest) -> str:
             "clip": request.clip.model_dump(),
             "controls": request.controls.model_dump(),
             "seed": request.seed,
+            "variation": request.variation,
             "drum_map": request.drum_map,
         },
         sort_keys=True,

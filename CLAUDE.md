@@ -52,7 +52,7 @@ service/                     Python FastAPI service (.venv/ for virtual env)
   requirements.txt           Python dependencies
   setup.sh                   Setup script (venv + deps + tests)
   .env.example               Environment variable template
-  tests/                     pytest test suite (92 tests)
+  tests/                     pytest test suite (100 tests)
 Docs/                        Documentation (source of truth)
 ```
 

@@ -27,7 +27,13 @@ class LLMProvider(ABC):
     """Abstract base for LLM providers."""
 
     @abstractmethod
-    def generate(self, system_prompt: str, user_prompt: str) -> LLMResult:
+    def generate(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        *,
+        timeout: float | None = None,
+    ) -> LLMResult:
         """Send prompts to the LLM and return the result."""
         ...
 
@@ -79,8 +85,14 @@ class AzureOpenAIProvider(LLMProvider):
         )
         self._deployment = deployment
 
-    def generate(self, system_prompt: str, user_prompt: str) -> LLMResult:
-        response = self._client.chat.completions.create(
+    def generate(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        *,
+        timeout: float | None = None,
+    ) -> LLMResult:
+        kwargs: dict = dict(
             model=self._deployment,
             messages=[
                 {"role": "system", "content": system_prompt},
@@ -89,6 +101,10 @@ class AzureOpenAIProvider(LLMProvider):
             temperature=0.7,
             max_tokens=4096,
         )
+        if timeout is not None:
+            kwargs["timeout"] = timeout
+
+        response = self._client.chat.completions.create(**kwargs)
 
         choice = response.choices[0]
         usage = response.usage
@@ -114,7 +130,13 @@ class AnthropicProvider(LLMProvider):
             "or set SERVICE_MOCK=1 for mock mode."
         )
 
-    def generate(self, system_prompt: str, user_prompt: str) -> LLMResult:
+    def generate(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        *,
+        timeout: float | None = None,
+    ) -> LLMResult:
         raise NotImplementedError
 
 

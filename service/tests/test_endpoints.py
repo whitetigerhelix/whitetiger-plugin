@@ -94,6 +94,21 @@ class TestGenerate:
         assert resp.status_code == 200
         assert resp.json()["ok"] is True
 
+    def test_generate_with_variation(self, client, valid_request_data):
+        valid_request_data["variation"] = 1
+        resp = client.post("/generate", json=valid_request_data)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["ok"] is True
+        assert data["plan"] is not None
+
+    def test_generate_variation_zero_default(self, client, valid_request_data):
+        """Request without variation field should default to 0 and succeed."""
+        assert "variation" not in valid_request_data
+        resp = client.post("/generate", json=valid_request_data)
+        assert resp.status_code == 200
+        assert resp.json()["ok"] is True
+
 
 class TestUsage:
     def test_usage_returns_stats(self, client):

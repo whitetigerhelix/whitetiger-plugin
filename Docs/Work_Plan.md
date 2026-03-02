@@ -50,22 +50,22 @@ Implementation roadmap for AI Groove Writer. Milestones are roughly sequential, 
 - [x] LLM call retry (up to 3 attempts on parse failure)
 - [x] Cost estimation: per-model pricing lookup table
 - [x] `service/app.py` wired with full LLM path: cache check → prompt build → LLM call → validate → cache put → usage log
-- [x] 92 tests passing (models, endpoints, prompts, validation, cache, provider)
+- [x] 100 tests passing (models, endpoints, prompts, validation, cache, provider)
 
 ### Milestone 5: Post-Processing & Determinism (mostly done via M3 JS)
 
 - [x] Swing algorithm in `post_process.js` — off-beat 8ths get full delay, 16ths get half
 - [x] Humanize timing: seeded xorshift32 RNG, ms→beats conversion
 - [x] Velocity jitter: seeded random ±offset, clamped 1–127
-- [ ] Seed reproducibility verification (same seed + request = same output)
-- [ ] Variation mode: seed increment for iterative exploration
+- [x] Variation mode: `variation` field on GenerateRequest, effective seed = `seed + variation`, different cache keys per variation
+- [ ] Seed reproducibility verification (same seed + request = same output) — deferred to end-to-end testing with M4L device
 
 ### Milestone 6: Caching & Reliability (mostly done via M4)
 
 - [x] Disk cache: SHA-256 hash of request → `service/cache/<hash>.json`
 - [x] Retry policy for LLM JSON parse failures (3 retries)
 - [x] Graceful error handling: service errors → `GenerateResponse` with `ok=false` + message
-- [ ] Timeout handling with fallback to last cached result
+- [x] Timeout handling: configurable `LLM_TIMEOUT_SECONDS` (default 30s), fallback to variation=0 cached result on failure
 - [x] Logging (request/response, errors, cache hits/misses via usage.py)
 
 ### Milestone 7: Presets & UX Polish

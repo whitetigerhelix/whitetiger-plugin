@@ -34,6 +34,7 @@ load_dotenv()
 log = logging.getLogger(__name__)
 
 MAX_LLM_RETRIES = 3
+LLM_TIMEOUT_SECONDS = float(os.getenv("LLM_TIMEOUT_SECONDS", "30"))
 
 app = FastAPI(
     title="AI Groove Writer Service",
@@ -114,9 +115,10 @@ def generate(req: GenerateRequest) -> GenerateResponse:
         )
         return cached_response
 
-    # 2. Build prompts
+    # 2. Build prompts (use effective seed = seed + variation)
+    effective_seed = req.seed + req.variation
     system_prompt = build_system_prompt()
-    user_prompt = build_user_prompt(preset, req)
+    user_prompt = build_user_prompt(preset, req, effective_seed=effective_seed)
 
     # 3. Get LLM provider
     try:
@@ -128,7 +130,9 @@ def generate(req: GenerateRequest) -> GenerateResponse:
     last_error = ""
     for attempt in range(1, MAX_LLM_RETRIES + 1):
         try:
-            result = provider.generate(system_prompt, user_prompt)
+            result = provider.generate(
+                system_prompt, user_prompt, timeout=LLM_TIMEOUT_SECONDS,
+            )
         except Exception as e:
             last_error = f"LLM call failed: {e}"
             log.warning("LLM call attempt %d failed: %s", attempt, e)
@@ -170,7 +174,29 @@ def generate(req: GenerateRequest) -> GenerateResponse:
 
         return response
 
-    # All retries exhausted
+    # All retries exhausted — try cached fallback
+    # Look for a cached response from the base variation (variation=0)
+    if req.variation > 0:
+        from copy import copy
+        fallback_req = copy(req)
+        object.__setattr__(fallback_req, "variation", 0)
+        fallback_key = cache_key(fallback_req)
+        fallback = cache_get(fallback_key)
+        if fallback is not None:
+            duration_ms = int((time.monotonic() - start_time) * 1000)
+            log_usage(
+                provider="cache-fallback",
+                model="cache-fallback",
+                prompt_tokens=0,
+                completion_tokens=0,
+                preset_id=req.preset_id,
+                bars=req.clip.bars,
+                cached=True,
+                duration_ms=duration_ms,
+            )
+            fallback.summary = f"[fallback] {fallback.summary}"
+            return fallback
+
     return GenerateResponse(
         ok=False,
         error=f"Failed after {MAX_LLM_RETRIES} attempts. Last error: {last_error}",

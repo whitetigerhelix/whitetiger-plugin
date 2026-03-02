@@ -23,6 +23,7 @@ This document is the canonical reference for the data contract between the M4L d
     "velocity_jitter": 6
   },
   "seed": 12345,
+  "variation": 0,
   "drum_map": "gm"
 }
 ```
@@ -91,17 +92,19 @@ clip_length_beats = bars × beats_per_bar
 - Maximum 5000 notes per response (service enforces)
 
 ### Request constraints
-| Field | Range | Default |
-|---|---|---|
-| `clip.bars` | 1–64 | 8 |
-| `clip.time_sig_num` | 1–12 | 4 |
-| `clip.time_sig_den` | 1–16 | 4 |
-| `clip.bpm` | 40–240 | 130 |
-| `controls.density` | 0–1 | varies by preset |
-| `controls.complexity` | 0–1 | varies by preset |
-| `controls.swing` | 0–1 | varies by preset |
-| `controls.humanize_ms` | 0–25 | varies by preset |
-| `controls.velocity_jitter` | 0–15 | varies by preset |
+| Field | Range | Default | Notes |
+|---|---|---|---|
+| `seed` | int | 12345 | Hint to LLM; also affects cache key |
+| `variation` | ≥ 0 | 0 | Variation index — effective seed = `seed + variation`. Different variations produce different cache keys and LLM outputs. |
+| `clip.bars` | 1–64 | 8 | |
+| `clip.time_sig_num` | 1–12 | 4 | |
+| `clip.time_sig_den` | 1–16 | 4 | |
+| `clip.bpm` | 40–240 | 130 | |
+| `controls.density` | 0–1 | varies by preset | |
+| `controls.complexity` | 0–1 | varies by preset | |
+| `controls.swing` | 0–1 | varies by preset | |
+| `controls.humanize_ms` | 0–25 | varies by preset | |
+| `controls.velocity_jitter` | 0–15 | varies by preset | |
 
 ## GM Drum Mapping (MVP)
 
