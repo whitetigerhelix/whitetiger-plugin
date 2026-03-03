@@ -58,6 +58,10 @@ function generate() {
         return;
     }
 
+    // Log the request to Max console for debugging
+    post("groove_http: sending to /generate:\n");
+    post(json_str + "\n");
+
     _post("/generate", json_str);
 }
 
@@ -108,24 +112,26 @@ function _post(path, body) {
 
 function _handle_response(req) {
     if (req.status >= 200 && req.status < 300) {
-        // Success — send JSON string to outlet 0
+        // Success — send JSON string to outlet 0, no bang on outlet 1
+        // (response_router handles status messaging)
         outlet(0, req.responseText);
-        outlet(1, "bang");
     } else if (req.status === 0) {
         outlet(1, "error: cannot connect to service at " + _base_url());
     } else {
-        // Try to extract error message from response
+        // Extract error details from response
         var err_msg = "HTTP " + req.status;
         try {
             var parsed = JSON.parse(req.responseText);
             if (parsed.detail) {
-                err_msg += ": " + parsed.detail;
+                // FastAPI 422 returns detail as an array — stringify it
+                err_msg += ": " + JSON.stringify(parsed.detail);
             } else if (parsed.error) {
                 err_msg += ": " + parsed.error;
             }
         } catch (e) {
             err_msg += ": " + req.responseText;
         }
+        post("groove_http error: " + err_msg + "\n");
         outlet(1, "error: " + err_msg);
     }
 }
