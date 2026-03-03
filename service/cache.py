@@ -29,6 +29,7 @@ def cache_key(request: GenerateRequest) -> str:
             "seed": request.seed,
             "variation": request.variation,
             "drum_map": request.drum_map,
+            "model": request.model,
         },
         sort_keys=True,
     )

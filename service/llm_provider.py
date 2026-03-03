@@ -33,8 +33,14 @@ class LLMProvider(ABC):
         user_prompt: str,
         *,
         timeout: float | None = None,
+        model_override: str | None = None,
     ) -> LLMResult:
-        """Send prompts to the LLM and return the result."""
+        """Send prompts to the LLM and return the result.
+
+        Args:
+            model_override: If provided, use this model/deployment instead
+                of the server default.
+        """
         ...
 
 
@@ -91,9 +97,11 @@ class AzureOpenAIProvider(LLMProvider):
         user_prompt: str,
         *,
         timeout: float | None = None,
+        model_override: str | None = None,
     ) -> LLMResult:
+        deployment = model_override or self._deployment
         kwargs: dict = dict(
-            model=self._deployment,
+            model=deployment,
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},
@@ -113,7 +121,7 @@ class AzureOpenAIProvider(LLMProvider):
             text=choice.message.content or "",
             prompt_tokens=usage.prompt_tokens if usage else 0,
             completion_tokens=usage.completion_tokens if usage else 0,
-            model=self._deployment,
+            model=deployment,
             provider="azure",
         )
 
@@ -136,6 +144,7 @@ class AnthropicProvider(LLMProvider):
         user_prompt: str,
         *,
         timeout: float | None = None,
+        model_override: str | None = None,
     ) -> LLMResult:
         raise NotImplementedError
 

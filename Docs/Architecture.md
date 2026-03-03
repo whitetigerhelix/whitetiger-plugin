@@ -72,6 +72,7 @@ The provider interface needs to support:
 - Chat completions with system + user prompts
 - Structured/JSON output mode (where available)
 - Configurable via environment variables (endpoint, API key, model/deployment)
+- Per-request model override via the `model` field on `GenerateRequest` (overrides the server default; included in cache key)
 
 ## Data Flow
 

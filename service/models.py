@@ -34,6 +34,7 @@ class GenerateRequest(BaseModel):
     seed: int = 12345
     variation: int = Field(default=0, ge=0)
     drum_map: Literal["gm"] = "gm"
+    model: str | None = None
 
 
 class NoteEvent(BaseModel):

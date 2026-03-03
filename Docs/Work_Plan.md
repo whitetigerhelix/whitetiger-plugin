@@ -50,7 +50,7 @@ Implementation roadmap for AI Groove Writer. Milestones are roughly sequential, 
 - [x] LLM call retry (up to 3 attempts on parse failure)
 - [x] Cost estimation: per-model pricing lookup table
 - [x] `service/app.py` wired with full LLM path: cache check → prompt build → LLM call → validate → cache put → usage log
-- [x] 100 tests passing (models, endpoints, prompts, validation, cache, provider)
+- [x] 106 tests passing (models, endpoints, prompts, validation, cache, provider)
 
 ### Milestone 5: Post-Processing & Determinism (mostly done via M3 JS)
 

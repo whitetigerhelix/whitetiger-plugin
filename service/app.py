@@ -131,7 +131,9 @@ def generate(req: GenerateRequest) -> GenerateResponse:
     for attempt in range(1, MAX_LLM_RETRIES + 1):
         try:
             result = provider.generate(
-                system_prompt, user_prompt, timeout=LLM_TIMEOUT_SECONDS,
+                system_prompt, user_prompt,
+                timeout=LLM_TIMEOUT_SECONDS,
+                model_override=req.model,
             )
         except Exception as e:
             last_error = f"LLM call failed: {e}"

@@ -81,6 +81,16 @@ class TestCacheKey:
         r2 = _make_request(variation=1)
         assert cache_key(r1) != cache_key(r2)
 
+    def test_different_model_different_key(self):
+        r1 = _make_request(model=None)
+        r2 = _make_request(model="gpt-4o-mini")
+        assert cache_key(r1) != cache_key(r2)
+
+    def test_same_model_same_key(self):
+        r1 = _make_request(model="gpt-4o-mini")
+        r2 = _make_request(model="gpt-4o-mini")
+        assert cache_key(r1) == cache_key(r2)
+
 
 class TestCacheGetPut:
     def test_miss_returns_none(self, tmp_path: Path):

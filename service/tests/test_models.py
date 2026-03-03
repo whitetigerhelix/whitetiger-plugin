@@ -147,6 +147,14 @@ class TestGenerateRequest:
         with pytest.raises(Exception):
             GenerateRequest(prompt="test", preset_id="breaks_atmos_130", variation=-1)
 
+    def test_model_default_none(self):
+        req = GenerateRequest(prompt="test", preset_id="breaks_atmos_130")
+        assert req.model is None
+
+    def test_model_accepts_string(self):
+        req = GenerateRequest(prompt="test", preset_id="breaks_atmos_130", model="gpt-4o-mini")
+        assert req.model == "gpt-4o-mini"
+
 
 class TestMidiPlan:
     def test_empty_plan(self):

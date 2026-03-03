@@ -24,7 +24,8 @@ This document is the canonical reference for the data contract between the M4L d
   },
   "seed": 12345,
   "variation": 0,
-  "drum_map": "gm"
+  "drum_map": "gm",
+  "model": "gpt-4o-mini"
 }
 ```
 
@@ -96,6 +97,7 @@ clip_length_beats = bars × beats_per_bar
 |---|---|---|---|
 | `seed` | int | 12345 | Hint to LLM; also affects cache key |
 | `variation` | ≥ 0 | 0 | Variation index — effective seed = `seed + variation`. Different variations produce different cache keys and LLM outputs. |
+| `model` | string or null | null | Override the server's default LLM model/deployment. Omit or set to null to use the server default from env vars. Included in cache key. |
 | `clip.bars` | 1–64 | 8 | |
 | `clip.time_sig_num` | 1–12 | 4 | |
 | `clip.time_sig_den` | 1–16 | 4 | |

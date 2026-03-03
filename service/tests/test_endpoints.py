@@ -109,6 +109,22 @@ class TestGenerate:
         assert resp.status_code == 200
         assert resp.json()["ok"] is True
 
+    def test_generate_with_model_override(self, client, valid_request_data):
+        """Request with model field should succeed in mock mode."""
+        valid_request_data["model"] = "gpt-4o-mini"
+        resp = client.post("/generate", json=valid_request_data)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["ok"] is True
+        assert data["plan"] is not None
+
+    def test_generate_model_none_default(self, client, valid_request_data):
+        """Request without model field should default to None and succeed."""
+        assert "model" not in valid_request_data
+        resp = client.post("/generate", json=valid_request_data)
+        assert resp.status_code == 200
+        assert resp.json()["ok"] is True
+
 
 class TestUsage:
     def test_usage_returns_stats(self, client):
