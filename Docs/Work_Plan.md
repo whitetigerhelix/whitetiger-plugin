@@ -26,17 +26,20 @@ Implementation roadmap for AI Groove Writer. Milestones are roughly sequential, 
 - [x] Implement `service/usage.py` — LLM credit consumption tracking (JSONL log + stats)
 - [x] Tests: 33 tests passing (models + endpoints)
 
-### Milestone 3: M4L Device — Clip Writing Pipeline (scaffolding ✓, manual patching required)
+### Milestone 3: M4L Device — Clip Writing Pipeline ✓
 
 - [x] JS helper files created in `m4l/js/`:
   - [x] `groove_http.js` — HTTP client (GET/POST to service, outlets for response + status)
   - [x] `note_writer.js` — clip writer (Live API: highlighted clip slot → remove/write notes)
   - [x] `post_process.js` — swing, humanize, velocity jitter (seeded RNG, all in Max)
+  - [x] `request_builder.js` — builds /generate request JSON from UI values (dict-like interface)
+  - [x] `response_router.js` — routes service responses to outlets (plan, summary, status, presets)
 - [x] Build guide: [M4L_Build_Guide.md](M4L_Build_Guide.md) — step-by-step Max patching instructions
-- [ ] **Manual:** Create M4L device skeleton (`AIGrooveWriter.amxd`) — requires Max editor
-- [ ] **Manual:** Wire UI patch (prompt, preset dropdown, control dials, status, buttons)
-- [ ] **Manual:** Connect JS objects per wiring diagram in build guide
-- [ ] **Manual:** Validate end-to-end with mock service response
+- [x] Created M4L device (`AI Groove Writer.amxd`) in Max editor
+- [x] Wired UI patch (prompt, preset dropdown, control dials, seed/variation/bars, summary, status)
+- [x] Connected JS objects: request_builder → groove_http → response_router → post_process → note_writer
+- [x] Validated end-to-end with mock service (117 notes generated and written to clip)
+- **Note:** `note_writer.js` uses deprecated `replace_selected_notes` API (deprecated since Live 11). Works fine but should be modernized to `apply_note_modifications` before distribution.
 
 ### Milestone 4: LLM Integration ✓
 
@@ -68,7 +71,7 @@ Implementation roadmap for AI Groove Writer. Milestones are roughly sequential, 
 - [x] Timeout handling: configurable `LLM_TIMEOUT_SECONDS` (default 30s), fallback to variation=0 cached result on failure
 - [x] Logging (request/response, errors, cache hits/misses via usage.py)
 
-### Milestone 7: Presets & UX Polish
+### Milestone 7: Presets & UX Polish (in progress)
 
 - [ ] All 5 presets fully wired:
   - `breaks_atmos_130` — Atmospheric Breakbeats (primary)
@@ -77,9 +80,11 @@ Implementation roadmap for AI Groove Writer. Milestones are roughly sequential, 
   - `four_on_floor` — 4-to-the-Floor
   - `halftime_broken` — Half-Time / Broken
 - [ ] Preset dropdown updates default control values in UI
-- [ ] Summary text display from model response
-- [ ] Error message display with clear status (Ready / Generating / Applied / Error)
+- [x] Summary text display from model response
+- [x] Error message display with status
 - [ ] Variation and Randomize Seed buttons
+- [ ] Modernize `note_writer.js`: replace deprecated `replace_selected_notes` / `notes` / `note` / `done` with `apply_note_modifications` (Live 11+ API)
+- [x] Per-request model override (`model` field on GenerateRequest)
 
 ### Milestone 8: Demo Hardening
 
@@ -87,6 +92,21 @@ Implementation roadmap for AI Groove Writer. Milestones are roughly sequential, 
 - [ ] Write demo script: 3 presets × 2 variations, under 5 minutes
 - [ ] End-to-end smoke test (full flow from prompt to audible groove)
 - [ ] Acceptance criteria verification (see [Project Plan](AI_Groove_Writer_Project_Plan.md) section 14)
+
+### Milestone 9: Server Management from M4L Device
+
+Start/stop the Python service and configure API keys directly from the M4L device — no terminal needed after initial `setup.sh`. Full plan: [Plan_Server_Management.md](Plan_Server_Management.md)
+
+- [ ] `service/runtime_config.py` — thread-safe in-memory config store (get/set with env var fallback)
+- [ ] `service/models.py` — add `ConfigRequest`, `ConfigStatusResponse` models
+- [ ] `service/llm_provider.py` — switch `os.getenv()` to `runtime_config.get_config()`
+- [ ] `service/app.py` — add `POST /config`, `GET /config/status`, `POST /shutdown` endpoints
+- [ ] `service/tests/conftest.py` — add `autouse` fixture for `clear_overrides()` cleanup
+- [ ] `service/tests/test_config.py` — tests for config and shutdown endpoints
+- [ ] `m4l/js/groove_http.js` — add `config`, `config_status`, `shutdown` message handlers
+- [ ] `m4l/js/response_router.js` — add outlet 5 for config status routing
+- [ ] `m4l/js/server_launcher.js` — Node.js child process launcher for Max's `node.script`
+- [ ] Documentation updates (Architecture, Setup Guide, M4L Build Guide)
 
 ---
 
@@ -126,3 +146,6 @@ Track key decisions and their rationale here as the project evolves.
 | 2026-03-02 | Post-processing in Max, not LLM | Deterministic reproducibility from seed; keeps LLM focused on pattern intent |
 | 2026-03-02 | Docs/ as single source of truth | Avoid stale duplicated content across CLAUDE.md, README, and code comments |
 | 2026-03-02 | AGPL-3.0 license (changed from MIT) | Strongest copyleft — protects against commercial exploitation; if anyone runs a modified version as a service, they must release changes |
+| 2026-03-03 | M4L device built, end-to-end mock MIDI generation working | Device manually patched in Max; 117 notes generated and written to clip via mock mode |
+| 2026-03-03 | Per-request model override added to GenerateRequest | Allows M4L device to select model/deployment without server restart |
+| 2026-03-03 | Server management plan (Milestone 9) | Enable start/stop service and API key config from within M4L device UI — see [Plan_Server_Management.md](Plan_Server_Management.md) |

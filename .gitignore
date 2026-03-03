@@ -30,5 +30,9 @@ Desktop.ini
 *.maxpreferences
 *-[0-9].maxpat
 
+# Ableton set backups
+m4l/ableton/WhitetigerPlugin Project/Backup
+
 # Claude plans (local only)
 .claude/plans/
+.claude/settings.local.json

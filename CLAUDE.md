@@ -20,6 +20,7 @@ Detailed specs and reference material live in `Docs/`. Always consult these rath
 - [Docs/Work_Plan.md](Docs/Work_Plan.md) — implementation roadmap, milestones, decision log
 - [Docs/M4L_Build_Guide.md](Docs/M4L_Build_Guide.md) — step-by-step Max for Live device building instructions
 - [Docs/Ideas_and_Brainstorm.md](Docs/Ideas_and_Brainstorm.md) — future vision and brainstorm ideas
+- [Docs/Plan_Server_Management.md](Docs/Plan_Server_Management.md) — server start/stop + runtime config from M4L device
 
 ## Key Conventions
 
@@ -34,8 +35,11 @@ Detailed specs and reference material live in `Docs/`. Always consult these rath
 
 ```
 m4l/                         Max for Live device
-  patches/                   .amxd device (built manually in Max editor)
+  patches/
+    AI Groove Writer.amxd    Built M4L device
   js/                        JS objects for Max's `js` runtime
+    request_builder.js       Request JSON builder (dict-like interface for Max)
+    response_router.js       Response routing (generate/presets/health → outlets)
     groove_http.js           HTTP client (POST /generate, GET /health etc.)
     note_writer.js           Clip writer (Live API note insertion)
     post_process.js          Swing, humanize, velocity jitter (seeded RNG)

@@ -39,7 +39,17 @@ The M4L device is the user-facing component running inside Ableton Live. It hand
 - **Note writing**: Converts the MIDI plan into Ableton clip notes via the Live API
 - **Post-processing**: Applies swing, humanize, and velocity jitter (deterministic, seeded)
 
-HTTP is handled via `maxurl` (native Max HTTP object) for simplicity. The device communicates only with `localhost` — never directly with an external LLM provider.
+HTTP is handled via `XMLHttpRequest` in the `groove_http.js` JS object. The device communicates only with `localhost` — never directly with an external LLM provider.
+
+**JS module chain:** `request_builder.js` → `groove_http.js` → `response_router.js` → `post_process.js` → `note_writer.js`
+
+| Module | Role |
+|--------|------|
+| `request_builder.js` | Collects UI values into a JSON request (dict-like `set key value` interface) |
+| `groove_http.js` | HTTP POST/GET to the Python service |
+| `response_router.js` | Routes responses by type (generate → plan+summary, presets → umenu, health → status) |
+| `post_process.js` | Swing, humanize timing, velocity jitter (seeded xorshift32 RNG) |
+| `note_writer.js` | Writes processed notes into the highlighted Ableton clip via Live API |
 
 ### Python FastAPI Service
 
