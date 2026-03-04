@@ -30,18 +30,18 @@ SERVICE_PORT=8787
 SERVICE_MOCK=0
 ```
 
-| Variable | Description | Default | Required |
-|---|---|---|---|
-| `AZURE_OPENAI_ENDPOINT` | Azure OpenAI endpoint URL | — | Yes (if using Azure) |
-| `AZURE_OPENAI_API_KEY` | Azure OpenAI API key | — | Yes (if using Azure) |
-| `AZURE_OPENAI_DEPLOYMENT` | Model deployment name | — | Yes (if using Azure) |
-| `AZURE_OPENAI_API_VERSION` | Azure API version | `2024-02-01` | No |
-| `ANTHROPIC_API_KEY` | Anthropic API key | — | Yes (if using Anthropic) |
-| `ANTHROPIC_MODEL` | Anthropic model ID | — | Yes (if using Anthropic) |
-| `SERVICE_PORT` | Service listen port | `8787` | No |
-| `SERVICE_MOCK` | Enable mock mode (no LLM calls) | `1` | No |
-| `LLM_PROVIDER` | LLM backend (`azure` or `anthropic`) | `azure` | No |
-| `LLM_TIMEOUT_SECONDS` | Timeout per LLM request (seconds) | `30` | No |
+| Variable                   | Description                          | Default      | Required                 |
+| -------------------------- | ------------------------------------ | ------------ | ------------------------ |
+| `AZURE_OPENAI_ENDPOINT`    | Azure OpenAI endpoint URL            | —            | Yes (if using Azure)     |
+| `AZURE_OPENAI_API_KEY`     | Azure OpenAI API key                 | —            | Yes (if using Azure)     |
+| `AZURE_OPENAI_DEPLOYMENT`  | Model deployment name                | —            | Yes (if using Azure)     |
+| `AZURE_OPENAI_API_VERSION` | Azure API version                    | `2024-02-01` | No                       |
+| `ANTHROPIC_API_KEY`        | Anthropic API key                    | —            | Yes (if using Anthropic) |
+| `ANTHROPIC_MODEL`          | Anthropic model ID                   | —            | Yes (if using Anthropic) |
+| `SERVICE_PORT`             | Service listen port                  | `8787`       | No                       |
+| `SERVICE_MOCK`             | Enable mock mode (no LLM calls)      | `1`          | No                       |
+| `LLM_PROVIDER`             | LLM backend (`azure` or `anthropic`) | `azure`      | No                       |
+| `LLM_TIMEOUT_SECONDS`      | Timeout per LLM request (seconds)    | `30`         | No                       |
 
 ## First-Time Setup
 
@@ -54,10 +54,11 @@ cd service
 ./setup.sh
 
 # If your Python 3.12+ isn't the default `python`, specify it:
-PYTHON="C:/Users/chroje/AppData/Local/Programs/Python/Python312/python.exe" ./setup.sh
+PYTHON="C:/Users/<user>/AppData/Local/Programs/Python/Python312/python.exe" ./setup.sh
 ```
 
 The script:
+
 1. Verifies Python 3.12+ is available
 2. Creates `.venv/` virtual environment (if it doesn't exist)
 3. Upgrades pip and installs dependencies from `requirements.txt`
@@ -82,6 +83,51 @@ pip install -r requirements.txt
 ```
 
 The venv is at `service/.venv/` and is gitignored.
+
+## Azure OpenAI Setup (Beginner Walkthrough)
+
+Use this once to move from mock mode to real AI generation.
+
+1. **Create an Azure subscription**
+   - Sign in at `portal.azure.com`
+   - Ensure your subscription is active and has spending quota
+
+2. **Create a Resource Group**
+   - In Azure Portal: Resource groups → Create
+   - Choose a region near you (for lower latency)
+
+3. **Create an Azure OpenAI resource**
+   - Search for “Azure OpenAI” → Create
+   - Put it in the resource group you just created
+
+4. **Create a model deployment**
+   - Open your Azure OpenAI resource in Azure AI Foundry/Studio
+   - Deploy a chat model (for MVP: `gpt-4o-mini` or `gpt-4o`)
+   - Copy the **deployment name** exactly
+
+5. **Collect required values**
+   - `AZURE_OPENAI_ENDPOINT` (from resource Keys/Endpoint page)
+   - `AZURE_OPENAI_API_KEY` (Key 1 or Key 2)
+   - `AZURE_OPENAI_DEPLOYMENT` (your deployment name)
+   - `AZURE_OPENAI_API_VERSION` (default `2024-02-01` is fine to start)
+
+6. **Configure local service**
+   - Copy `service/.env.example` to `service/.env` if needed
+   - Set:
+     - `LLM_PROVIDER=azure`
+     - `SERVICE_MOCK=0`
+     - Azure vars from step 5
+
+7. **Start and verify**
+   - Start service: `uvicorn app:app --host 127.0.0.1 --port 8787`
+   - Check health: `curl http://127.0.0.1:8787/health`
+   - Generate from the M4L device
+
+8. **Common first errors**
+   - `401 Unauthorized`: wrong API key
+   - `404 Not Found`: wrong deployment name or endpoint
+   - `429 Too Many Requests`: quota/rate-limit hit
+   - timeout: increase `LLM_TIMEOUT_SECONDS`
 
 ## Starting the Service
 

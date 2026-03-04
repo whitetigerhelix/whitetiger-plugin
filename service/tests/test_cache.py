@@ -91,6 +91,16 @@ class TestCacheKey:
         r2 = _make_request(model="gpt-4o-mini")
         assert cache_key(r1) == cache_key(r2)
 
+    def test_different_allowed_pitches_different_key(self):
+        r1 = _make_request(allowed_pitches=[36, 38, 42])
+        r2 = _make_request(allowed_pitches=[36, 38, 46])
+        assert cache_key(r1) != cache_key(r2)
+
+    def test_different_instrument_hints_different_key(self):
+        r1 = _make_request(instrument_hints=["syncopated shaker"]) 
+        r2 = _make_request(instrument_hints=["ghost snare layer"])
+        assert cache_key(r1) != cache_key(r2)
+
 
 class TestCacheGetPut:
     def test_miss_returns_none(self, tmp_path: Path):

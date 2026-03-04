@@ -35,6 +35,8 @@ class GenerateRequest(BaseModel):
     variation: int = Field(default=0, ge=0)
     drum_map: Literal["gm"] = "gm"
     model: str | None = None
+    allowed_pitches: list[int] | None = Field(default=None)
+    instrument_hints: list[str] | None = Field(default=None)
 
 
 class NoteEvent(BaseModel):

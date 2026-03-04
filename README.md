@@ -1,76 +1,121 @@
 # AI Groove Writer
 
-Max for Live MIDI device + Python companion service that generates drum grooves from natural-language prompts via AI, writing them directly into Ableton Live clips.
+AI Groove Writer is a Max for Live MIDI effect plus a local Python FastAPI service that generates structured drum MIDI from natural-language prompts and writes it directly into Ableton Live clips.
 
-## What It Does
+The current MVP focuses on progressive and atmospheric breakbeat workflows around 130 BPM, with deterministic variation controls for repeatable iteration.
 
-- Accept a natural-language prompt plus a style preset and musical controls
-- Send the request to a local Python service, which calls an LLM (provider-swappable)
-- Receive a structured JSON "MIDI plan" (notes with beat positions, durations, velocities)
-- Write the plan into the currently selected Ableton MIDI clip
-- Apply deterministic swing, humanize, and velocity jitter from a seed for repeatable iteration
+## Key Capabilities
 
-**MVP scope:** Drums only (GM drum pitches), one clip at a time, 5 style presets.
+- Natural-language groove generation with style presets and musical control values.
+- Local companion service for validation, caching, and provider abstraction.
+- Structured JSON contract between Max for Live and Python service.
+- Deterministic post-processing chain in Max: swing, humanize timing, velocity jitter.
+- Clip writing to Ableton highlighted MIDI clip slot, including create-and-apply flow.
 
-## Architecture
+## Current Scope
 
-```
-[M4L Device]  ──HTTP POST──▸  [Python FastAPI]  ──HTTPS──▸  [LLM Provider]
-  (UI, clip I/O,                (validation,                 (structured JSON
-   post-process)                 caching, prompts)            response)
-```
+- Drums-focused MIDI generation in a single clip lane.
+- One clip target at a time via highlighted clip slot.
+- General MIDI mapping baseline with optional pitch guidance for custom rack layering.
+- Localhost-only service boundary for security.
 
-See [Docs/Architecture.md](Docs/Architecture.md) for full details.
+## System Architecture
+
+Ableton Live (M4L device) sends GenerateRequest JSON to local FastAPI, which builds prompts, calls configured provider, validates/clamps notes, caches results, and returns GenerateResponse for clip writing.
+
+See [Docs/Architecture.md](Docs/Architecture.md) for full architecture and data flow.
+
+## Requirements
+
+- Ableton Live 12.3.5+ (Suite with Max for Live)
+- Python 3.12+
+- Windows 64-bit (primary target)
+- Azure OpenAI credentials for real generation mode
 
 ## Quick Start
 
-1. **Run setup** — Creates virtual environment and installs dependencies:
-   ```bash
-   cd service
-   ./setup.sh
-   ```
+1. Prepare Python service
 
-2. **Configure environment** — Copy `service/.env.example` to `service/.env` and fill in your LLM credentials. See [Docs/Setup_Guide.md](Docs/Setup_Guide.md).
+- Run setup from [service/setup.sh](service/setup.sh)
+- This creates [service/.venv](service/.venv), installs dependencies, and runs tests
 
-3. **Start the service**
-   ```bash
-   cd service
-   source .venv/Scripts/activate   # or .venv\Scripts\activate on Windows cmd
-   uvicorn app:app --host 127.0.0.1 --port 8787
-   ```
-
-4. **Load in Ableton** — Drag `m4l/AIGrooveWriter.amxd` onto a MIDI track with a Drum Rack. Select a clip slot, choose a preset, generate.
-
-## Repo Layout
-
-```
-whitetiger-plugin/
-  m4l/                         Max for Live device + patches
-    AIGrooveWriter.amxd
-    patches/
-  service/                     Python FastAPI service
-    app.py                     FastAPI entry point
-    models.py                  Pydantic v2 request/response models
-    presets.py                 Preset registry (5 presets)
-    mock_grooves.py            Mock groove patterns for dev
-    usage.py                   LLM credit tracking
-    requirements.txt
-    setup.sh                   Setup script (venv + deps)
-    tests/                     pytest test suite
-  Docs/                        Documentation (source of truth)
+```bash
+cd service
+./setup.sh
 ```
 
-## Documentation
+2. Configure environment
 
-| Document | Description |
-|---|---|
-| [Architecture](Docs/Architecture.md) | System design, data flow, security boundary |
-| [Setup Guide](Docs/Setup_Guide.md) | Prerequisites, env vars, running the service |
-| [JSON Contract](Docs/JSON_Contract.md) | Request/response schemas, drum mapping, validation |
-| [Project Plan](Docs/AI_Groove_Writer_Project_Plan.md) | Full MVP spec (source of truth) |
-| [Work Plan](Docs/Work_Plan.md) | Implementation roadmap and milestones |
-| [Ideas & Brainstorm](Docs/Ideas_and_Brainstorm.md) | Future vision and ideas |
+- Copy [service/.env.example](service/.env.example) to [service/.env](service/.env)
+- Set provider and credentials
+- For real AI calls set `SERVICE_MOCK=0` and `LLM_PROVIDER=azure`
+
+3. Start local service
+
+- Launch uvicorn on localhost only
+- Verify the health endpoint
+
+```bash
+cd service
+.venv/Scripts/python.exe -m uvicorn app:app --host 127.0.0.1 --port 8787
+curl http://127.0.0.1:8787/health
+```
+
+4. Load device in Ableton
+
+- Open [m4l/patches/AI Groove Writer.amxd](m4l/patches/AI%20Groove%20Writer.amxd)
+- Place it on a MIDI track with Drum Rack
+- Select a MIDI clip slot, choose preset, generate, and apply
+
+For step-by-step setup details, see [Docs/Setup_Guide.md](Docs/Setup_Guide.md).
+
+## Configuration Model
+
+- API keys and provider settings are managed in [service/.env](service/.env) for v1.
+- M4L does not store secrets in the device patch for this phase.
+- Optional per-request model override is supported through the GenerateRequest field model.
+- Optional request growth fields support custom layering guidance:
+  - allowed_pitches
+  - instrument_hints
+
+Contract reference: [Docs/JSON_Contract.md](Docs/JSON_Contract.md).
+
+## Testing
+
+Service test suite lives under [service/tests](service/tests).
+
+Recommended validation order:
+
+1. Unit and contract tests via pytest
+2. Service health and presets endpoint checks
+3. Generate call checks in mock mode
+4. Generate call checks in real Azure mode
+5. End-to-end Ableton clip write verification
+
+## Repository Structure
+
+- [Docs](Docs): project documentation and source-of-truth specs
+- [m4l/js](m4l/js): Max JavaScript modules for request, HTTP, routing, post-process, note writing
+- [m4l/patches](m4l/patches): Max for Live device assets
+- [service](service): FastAPI service, provider abstraction, validation, caching, tests
+
+## Security Notes
+
+- Service binds to localhost 127.0.0.1 only.
+- Secrets stay in local environment configuration, not in patch/device files.
+- No direct external provider calls from the M4L layer.
+
+## Documentation Index
+
+- [Docs/AI_Groove_Writer_Project_Plan.md](Docs/AI_Groove_Writer_Project_Plan.md)
+- [Docs/Work_Plan.md](Docs/Work_Plan.md)
+- [Docs/Architecture.md](Docs/Architecture.md)
+- [Docs/JSON_Contract.md](Docs/JSON_Contract.md)
+- [Docs/Setup_Guide.md](Docs/Setup_Guide.md)
+- [Docs/M4L_Build_Guide.md](Docs/M4L_Build_Guide.md)
+- [Docs/Plan_Server_Management.md](Docs/Plan_Server_Management.md)
+- [Docs/Ideas_and_Brainstorm.md](Docs/Ideas_and_Brainstorm.md)
 
 ## License
 
-AGPL-3.0 — see [LICENSE](LICENSE).
+Licensed under AGPL-3.0-or-later. See [LICENSE](LICENSE).

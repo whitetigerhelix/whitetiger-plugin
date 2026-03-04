@@ -103,3 +103,23 @@ class TestUserPrompt:
         req = self._make_request()  # seed=42
         prompt = build_user_prompt(preset, req)
         assert "Seed: 42" in prompt
+
+    def test_allowed_pitches_included_when_present(self):
+        preset = get_preset("breaks_atmos_130")
+        req = self._make_request()
+        req = req.model_copy(update={"allowed_pitches": [36, 38, 42, 46, 49]})
+
+        prompt = build_user_prompt(preset, req)
+        assert "Allowed MIDI pitches: [36, 38, 42, 46, 49]" in prompt
+
+    def test_instrument_hints_included_when_present(self):
+        preset = get_preset("breaks_atmos_130")
+        req = self._make_request()
+        req = req.model_copy(update={
+            "instrument_hints": ["syncopated shaker layer", "ghost-note snare texture"],
+        })
+
+        prompt = build_user_prompt(preset, req)
+        assert "Instrument/layer hints:" in prompt
+        assert "syncopated shaker layer" in prompt
+        assert "ghost-note snare texture" in prompt

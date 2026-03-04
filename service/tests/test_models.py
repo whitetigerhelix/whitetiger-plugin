@@ -155,6 +155,22 @@ class TestGenerateRequest:
         req = GenerateRequest(prompt="test", preset_id="breaks_atmos_130", model="gpt-4o-mini")
         assert req.model == "gpt-4o-mini"
 
+    def test_allowed_pitches_accepts_int_list(self):
+        req = GenerateRequest(
+            prompt="test",
+            preset_id="breaks_atmos_130",
+            allowed_pitches=[36, 38, 42, 46, 49],
+        )
+        assert req.allowed_pitches == [36, 38, 42, 46, 49]
+
+    def test_instrument_hints_accepts_string_list(self):
+        req = GenerateRequest(
+            prompt="test",
+            preset_id="breaks_atmos_130",
+            instrument_hints=["ghost snare layer", "syncopated shaker"],
+        )
+        assert req.instrument_hints == ["ghost snare layer", "syncopated shaker"]
+
 
 class TestMidiPlan:
     def test_empty_plan(self):

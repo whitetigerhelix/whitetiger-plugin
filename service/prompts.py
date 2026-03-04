@@ -29,6 +29,8 @@ Rules:
 - Return ONLY the JSON object. No markdown, no code fences, no explanation.
 - All times are in quarter-note beats (Ableton-native).
 - Use General MIDI drum pitches: kick=36, snare=38, clap=39, closed hat=42, open hat=46, crash=49.
+- If the user provides allowed pitch constraints, use only those pitches.
+- Prefer layered percussion and syncopated rhythms when requested.
 - Every note must satisfy: start_beats + dur_beats <= clip_length_beats.
 - Velocity range: 1-127 (never 0).
 - Maximum 5000 notes total.
@@ -70,5 +72,13 @@ def build_user_prompt(
 
     prompt += f"\n\nClip length: {clip_length_beats} quarter-note beats."
     prompt += f"\nSeed: {seed}"
+
+    if request.allowed_pitches:
+      allowed = ", ".join(str(p) for p in request.allowed_pitches)
+      prompt += f"\nAllowed MIDI pitches: [{allowed}]"
+
+    if request.instrument_hints:
+      hints = "; ".join(request.instrument_hints)
+      prompt += f"\nInstrument/layer hints: {hints}"
 
     return prompt
