@@ -16,6 +16,7 @@
  *   5: preset defaults JSON (density, complexity, swing, humanize_ms, velocity_jitter)
  *   6: Surprise prompt text (wire to prompt UI and request_builder)
  *   7: Surprise request JSON (wire to [prepend surprise] → groove_http)
+ *   8: Busy indicator (1 = working, 0 = idle — wire to live.text or live.led)
  *
  * Messages:
  *   anything      — parse JSON response and route to outlets
@@ -28,7 +29,7 @@
 
 autowatch = 1;
 inlets = 1;
-outlets = 8;
+outlets = 9;
 
 var preset_ids = [];
 var preset_defaults = [];
@@ -106,6 +107,7 @@ function select(idx) {
 }
 
 function begin_generate() {
+  outlet(8, 1);
   outlet(1, " ");
   outlet(2, "generating...");
 }
@@ -131,6 +133,7 @@ function surprise(color) {
   // Preserve currently selected model override if present in request_builder path
   // by allowing caller to attach model through regular request flow if desired.
 
+  outlet(8, 1);
   outlet(1, " ");
   outlet(2, "requesting surprise prompt...");
   outlet(7, JSON.stringify(req));
@@ -139,6 +142,7 @@ function surprise(color) {
 // --- Internal handlers ---
 
 function _handle_generate(resp) {
+  outlet(8, 0);
   if (!resp.ok) {
     outlet(1, " ");
     outlet(2, "error: " + (resp.error || "unknown error from service"));
@@ -161,11 +165,13 @@ function _handle_presets(arr) {
     preset_defaults.push(arr[i].defaults || {});
     outlet(3, "append", arr[i].name);
   }
+  outlet(8, 0);
   outlet(1, " ");
   outlet(2, "loaded " + arr.length + " presets");
 }
 
 function _handle_surprise(resp) {
+  outlet(8, 0);
   if (!resp.ok || !resp.surprise) {
     outlet(2, "error: " + (resp.error || "failed to build surprise prompt"));
     return;

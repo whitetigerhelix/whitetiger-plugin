@@ -43,27 +43,29 @@ HTTP is handled via `XMLHttpRequest` in the `groove_http.js` JS object. The devi
 
 **JS module chain:** `request_builder.js` → `groove_http.js` → `response_router.js` → `post_process.js` → `note_writer.js`
 
-| Module | Role |
-|--------|------|
-| `request_builder.js` | Collects UI values into a JSON request (dict-like `set key value` interface) |
-| `groove_http.js` | HTTP POST/GET to the Python service |
-| `response_router.js` | Routes responses by type (generate → plan+summary, presets → umenu, health → status) |
-| `post_process.js` | Swing, humanize timing, velocity jitter (seeded xorshift32 RNG) |
-| `note_writer.js` | Writes processed notes into the highlighted Ableton clip via Live API |
+| Module               | Role                                                                                                                                                        |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `request_builder.js` | Collects UI values into a JSON request (dict-like `set key value` interface)                                                                                |
+| `groove_http.js`     | HTTP POST/GET to the Python service                                                                                                                         |
+| `response_router.js` | Routes responses by type (generate → plan+summary, surprise → prompt+controls, presets → umenu, health → status). Emits busy indicator for visual feedback. |
+| `post_process.js`    | Swing, humanize timing, velocity jitter (seeded xorshift32 RNG)                                                                                             |
+| `note_writer.js`     | Writes processed notes into the highlighted Ableton clip via Live API                                                                                       |
 
 ### Python FastAPI Service
 
 A local companion service running on the same machine as Ableton. Responsibilities:
 
 - Receives `GenerateRequest` JSON from the M4L device
+- Receives `SurpriseRequest` JSON for LLM-generated prompt/control suggestions
 - Constructs the LLM prompt from preset templates, user input, and control values
 - Calls the LLM provider and parses the structured JSON response
 - Validates and clamps notes to clip boundaries (Pydantic v2 models)
 - Enforces max note count (5000)
 - Caches results on disk keyed by SHA-256 hash of request fields
-- Returns `GenerateResponse` JSON to the M4L device
+- Returns `GenerateResponse` or `SurpriseResponse` JSON to the M4L device
 
 Why a separate service (not embedded in Max)?
+
 - Keeps API keys/secrets out of the Max device
 - Simplifies HTTP, retries, caching, and JSON validation
 - Python ecosystem is better suited for LLM client libraries
@@ -74,11 +76,13 @@ Why a separate service (not embedded in Max)?
 The AI backend that generates the structured MIDI plan JSON. The service abstracts this behind a provider interface so the specific LLM can be swapped without changing the rest of the system.
 
 **Provider options under consideration:**
+
 - Azure OpenAI (GPT-4o) — initial development target
 - Anthropic Claude — potential switch for ethical/quality reasons
 - Local models — future possibility for offline use
 
 The provider interface needs to support:
+
 - Chat completions with system + user prompts
 - Structured/JSON output mode (where available)
 - Configurable via environment variables (endpoint, API key, model/deployment)
@@ -111,6 +115,7 @@ The provider interface needs to support:
 Post-processing happens entirely in the M4L device, not in the LLM. This keeps the LLM focused on pattern intent while ensuring deterministic, reproducible results from a given seed.
 
 **Order:**
+
 1. **Swing** — Pushes off-beat 8th notes toward a triplet feel; 16th notes get half the delay
 2. **Humanize (timing)** — Seeded random jitter in milliseconds, converted to beats
 3. **Velocity jitter** — Seeded random offset, clamped to 1–127
@@ -133,7 +138,7 @@ The LLM call has a configurable timeout (`LLM_TIMEOUT_SECONDS` env var, default 
 2. If found, return it with `[fallback]` prefix in the summary
 3. If no fallback available, return an error response
 
-This ensures users see *something* even if the LLM is slow or unreachable, as long as a base variation was previously cached.
+This ensures users see _something_ even if the LLM is slow or unreachable, as long as a base variation was previously cached.
 
 ## Security Boundary
 

@@ -293,7 +293,7 @@ response_router.js outlet 5
 
 Each outlet sends a number directly to the corresponding `live.dial`. The dial updates its display and also fires its output, which flows through the existing `set controls:density $1` (etc.) messages into `request_builder`, keeping the request in sync automatically.
 
-> **Note:** `response_router.js` now has **8 outlets**. After saving the JS file, you may need to close and reopen the device (or delete and re-create the `js response_router.js` object) for Max to pick up the new outlet count.
+> **Note:** `response_router.js` now has **9 outlets**. After saving the JS file, you may need to close and reopen the device (or delete and re-create the `js response_router.js` object) for Max to pick up the new outlet count. See section 13 for a complete wiring checklist.
 
 ---
 
@@ -361,10 +361,12 @@ If you want Generate to fire automatically after changing seed or variation, wir
 - `begin_generate` — clears summary and sets status to `generating...`
 - `surprise [0..1]` — emits an LLM surprise request payload (`preset_id` + `color`)
 
-> **Note:** `response_router.js` now has **8 outlets**.
+> **Note:** `response_router.js` now has **9 outlets**.
 >
+> - Outlet 5 = controls defaults JSON (preset select AND surprise controls)
 > - Outlet 6 = generated surprise prompt text
 > - Outlet 7 = surprise request JSON (wire to `groove_http`)
+> - Outlet 8 = busy indicator (1 = working, 0 = idle)
 
 ### A) Clear summary when Generate starts
 
@@ -439,6 +441,50 @@ response_router outlet 5 → preset_defaults_unpacker.js → control dials
 ```
 
 No extra unpacker object is needed.
+
+### E) Busy indicator (outlet 8)
+
+Outlet 8 outputs `1` when Generate or Surprise starts, and `0` when any response (success or error) arrives. Wire it to one or more visual indicators:
+
+**LED:**
+
+```
+response_router outlet 8 → live.led
+```
+
+**Color-changing status label:**
+
+```
+response_router outlet 8 → [select 0 1]
+   ├── 0 → [message set Ready]          → Status live.text
+   └── 1 → [message set ● THINKING...]  → Status live.text
+```
+
+**Panel color flash:**
+
+```
+response_router outlet 8 → [select 0 1]
+   ├── 0 → [0.15 0.15 0.15 1.] → [prepend bgcolor] → panel
+   └── 1 → [0.0 0.6 0.8 1.]    → [prepend bgcolor] → panel
+```
+
+All three can be used together for maximum visibility.
+
+### Wiring checklist after re-creating `response_router.js`
+
+When you delete and re-create the JS object to pick up new outlet counts, re-wire:
+
+| Outlet | Target                                           |
+| ------ | ------------------------------------------------ |
+| 0      | `[prepend process]` → `post_process.js`          |
+| 1      | `[prepend set]` → Summary textedit               |
+| 2      | `[prepend set]` → Status textedit                |
+| 3      | umenu (clear/append)                             |
+| 4      | `[prepend set preset_id]` → `request_builder.js` |
+| 5      | `preset_defaults_unpacker.js` → dials            |
+| 6      | `[t s s]` → prompt textedit + request_builder    |
+| 7      | `[prepend surprise]` → `groove_http.js`          |
+| 8      | busy indicator (LED / live.text / panel)         |
 
 ---
 
