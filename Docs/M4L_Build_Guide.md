@@ -47,33 +47,37 @@ You need three `js` objects, each pointing to a file in `m4l/js/`:
 Add the following UI elements in the Max editor. Suggested layout (top to bottom):
 
 ### Row 1: Prompt & Preset
-| Element | Max Object | Notes |
-|---|---|---|
-| Prompt | `textedit` | Multi-line text input for user prompt |
-| Preset | `umenu` | Dropdown — populate from `/presets` endpoint |
-| Generate button | `live.button` or `button` | Triggers the generate flow |
+
+| Element         | Max Object                | Notes                                        |
+| --------------- | ------------------------- | -------------------------------------------- |
+| Prompt          | `textedit`                | Multi-line text input for user prompt        |
+| Preset          | `umenu`                   | Dropdown — populate from `/presets` endpoint |
+| Generate button | `live.button` or `button` | Triggers the generate flow                   |
 
 ### Row 2: Controls (Knobs)
-| Element | Max Object | Range | Default |
-|---|---|---|---|
-| Density | `live.dial` | 0.0–1.0 | 0.75 |
-| Complexity | `live.dial` | 0.0–1.0 | 0.65 |
-| Swing | `live.dial` | 0.0–1.0 | 0.35 |
-| Humanize (ms) | `live.dial` | 0–25 | 8 |
-| Vel Jitter | `live.dial` | 0–15 | 6 |
+
+| Element       | Max Object  | Range   | Default |
+| ------------- | ----------- | ------- | ------- |
+| Density       | `live.dial` | 0.0–1.0 | 0.75    |
+| Complexity    | `live.dial` | 0.0–1.0 | 0.65    |
+| Swing         | `live.dial` | 0.0–1.0 | 0.35    |
+| Humanize (ms) | `live.dial` | 0–25    | 8       |
+| Vel Jitter    | `live.dial` | 0–15    | 6       |
 
 ### Row 3: Info Display
-| Element | Max Object | Notes |
-|---|---|---|
-| Status | `comment` or `textedit` (read-only) | Shows "generating...", "wrote 24 notes", errors |
-| Usage info | `comment` | Optional — shows token count / cost |
+
+| Element    | Max Object                          | Notes                                           |
+| ---------- | ----------------------------------- | ----------------------------------------------- |
+| Status     | `comment` or `textedit` (read-only) | Shows "generating...", "wrote 24 notes", errors |
+| Usage info | `comment`                           | Optional — shows token count / cost             |
 
 ### Row 4: Utility
-| Element | Max Object | Notes |
-|---|---|---|
-| Seed | `live.numbox` | Integer, default 12345 |
-| BPM display | `live.numbox` | Read from Live's tempo |
-| Health check | `button` + `comment` | Ping the service |
+
+| Element      | Max Object           | Notes                  |
+| ------------ | -------------------- | ---------------------- |
+| Seed         | `live.numbox`        | Integer, default 12345 |
+| BPM display  | `live.numbox`        | Read from Live's tempo |
+| Health check | `button` + `comment` | Ping the service       |
 
 ---
 
@@ -174,6 +178,7 @@ To auto-fill BPM and time signature from the current Live set:
 ```
 
 For clip bar count, you can either:
+
 - Let the user set it manually (numbox)
 - Read from highlighted clip: `[live.object "live_set view highlighted_clip_slot clip"] → get length` (returns beats, divide by time_sig_num for bars)
 
@@ -193,6 +198,7 @@ On device load (use `loadbang`):
 ## 8. Extracting the Plan from Response
 
 The `/generate` response looks like:
+
 ```json
 {
   "ok": true,
@@ -203,6 +209,7 @@ The `/generate` response looks like:
 ```
 
 Use a `dict` object to parse the response:
+
 1. `dict.parse <response_json>`
 2. Check `dict.get ok` — if false, display `dict.get error` in status
 3. If ok, `dict.get plan` → serialize the plan sub-dict → send to `post_process`
@@ -213,12 +220,14 @@ Use a `dict` object to parse the response:
 ## 9. Testing Each Piece
 
 ### Test groove_http
+
 1. Start the Python service (mock mode): `SERVICE_MOCK=1 .venv/Scripts/python.exe -m uvicorn app:app --port 8787`
 2. In Max, send `health` to `groove_http` — should get `{"ok": true}` on outlet 0
 3. Send `presets` — should get a JSON array of 5 presets
 4. Send `generate {"prompt":"test","preset_id":"breaks_atmos_130","clip":{"bars":4,"bpm":130}}` — should get a full response
 
 ### Test note_writer
+
 1. Highlight an empty clip slot in Ableton
 2. Send a hardcoded MidiPlan JSON to `note_writer` with `write` message:
    ```
@@ -227,6 +236,7 @@ Use a `dict` object to parse the response:
 3. You should see notes appear in the clip
 
 ### Test post_process
+
 1. Send a MidiPlan JSON to `post_process` with `process` message
 2. Check that outlet 0 produces modified JSON
 3. Vary swing/humanize/vel_jitter parameters and verify notes change
@@ -283,7 +293,7 @@ response_router.js outlet 5
 
 Each outlet sends a number directly to the corresponding `live.dial`. The dial updates its display and also fires its output, which flows through the existing `set controls:density $1` (etc.) messages into `request_builder`, keeping the request in sync automatically.
 
-> **Note:** `response_router.js` now has **6 outlets** (was 5). After saving the JS file, you may need to close and reopen the device (or delete and re-create the `js response_router.js` object) for Max to pick up the new outlet count.
+> **Note:** `response_router.js` now has **8 outlets**. After saving the JS file, you may need to close and reopen the device (or delete and re-create the `js response_router.js` object) for Max to pick up the new outlet count.
 
 ---
 
@@ -341,6 +351,94 @@ Picks a random seed (0–99999) and sets it:
 ### Optional: Auto-generate after button press
 
 If you want Generate to fire automatically after changing seed or variation, wire `delay 50` → `request_builder` bang inlet (NOT `prepend generate` — that bypasses JSON serialization and causes HTTP 422). This is optional — you may prefer to click Generate manually after adjusting seed/variation.
+
+---
+
+## 13. Surprise Prompt + Color Control
+
+`response_router.js` supports two helper messages for better UX:
+
+- `begin_generate` — clears summary and sets status to `generating...`
+- `surprise [0..1]` — emits an LLM surprise request payload (`preset_id` + `color`)
+
+> **Note:** `response_router.js` now has **8 outlets**.
+>
+> - Outlet 6 = generated surprise prompt text
+> - Outlet 7 = surprise request JSON (wire to `groove_http`)
+
+### A) Clear summary when Generate starts
+
+Wire the Generate button to send:
+
+```
+[Generate button]
+   ├──→ existing generate flow (request_builder/groove_http)
+   └──→ [message begin_generate] → response_router.js
+```
+
+This prevents stale summary text from previous runs.
+
+### B) Surprise button
+
+Add a `Surprise` button and wire it to `response_router.js`:
+
+```
+[Surprise button] → [message surprise] → response_router.js
+```
+
+Then wire surprise request dispatch to HTTP:
+
+```
+response_router outlet 7 → [prepend surprise] → groove_http.js
+```
+
+`groove_http.js` posts this to `/surprise`, the service asks the LLM, and the response comes back through the normal response path.
+
+The router then outputs:
+
+1. Summary/status update (outlets 1/2)
+2. Generated prompt text (outlet 6)
+3. Matched controls JSON (outlet 5)
+
+So the suggestion and dial values stay musically consistent.
+
+### B2) Push surprise text into Prompt field + request payload
+
+To avoid extra JS modules and keep wiring clean, route outlet 6 into both the UI prompt box and `request_builder`:
+
+```
+response_router outlet 6
+     │
+     ▼
+       [t s s]
+   │   │
+   │   └──→ [prepend set prompt] → request_builder
+   │
+   └──────→ [prepend set] → Prompt textedit
+```
+
+This keeps the visible prompt and request JSON in sync immediately.
+
+### C) Optional Color dial (tight ↔ broad)
+
+Use a `live.dial` range `0..1` and feed it into `surprise`:
+
+```
+[Color dial 0..1] → [prepend surprise] → response_router.js
+```
+
+- `0.0` = tighter/safer suggestions near preset defaults
+- `1.0` = broader/more adventurous suggestions
+
+### D) Apply surprise controls to dials
+
+Re-use the same defaults pipeline from section 11:
+
+```
+response_router outlet 5 → preset_defaults_unpacker.js → control dials
+```
+
+No extra unpacker object is needed.
 
 ---
 

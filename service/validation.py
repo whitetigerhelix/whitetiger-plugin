@@ -120,9 +120,9 @@ def parse_llm_response(text: str, clip: ClipInfo) -> MidiPlan:
     plan = MidiPlan(
         version=data.get("version", 1),
         mode=data.get("mode", "drums"),
-        bars=data.get("bars", clip.bars),
-        time_sig_num=data.get("time_sig_num", clip.time_sig_num),
-        time_sig_den=data.get("time_sig_den", clip.time_sig_den),
+        bars=clip.bars,
+        time_sig_num=clip.time_sig_num,
+        time_sig_den=clip.time_sig_den,
         notes=valid_notes,
     )
 

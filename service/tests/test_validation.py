@@ -49,6 +49,23 @@ class TestParseValidJSON:
         assert plan.time_sig_num == 4
         assert plan.time_sig_den == 4
 
+    def test_clip_metadata_overrides_llm_metadata(self):
+        text = json.dumps({
+            "version": 1,
+            "mode": "drums",
+            "bars": 8,
+            "time_sig_num": 4,
+            "time_sig_den": 4,
+            "notes": [
+                {"pitch": 36, "start_beats": 0.0, "dur_beats": 0.5, "vel": 100, "mute": 0}
+            ],
+        })
+        clip = ClipInfo(bars=16, time_sig_num=3, time_sig_den=4, bpm=120)
+        plan = parse_llm_response(text, clip)
+        assert plan.bars == 16
+        assert plan.time_sig_num == 3
+        assert plan.time_sig_den == 4
+
 
 class TestCodeFenceExtraction:
     def test_json_code_fence(self):

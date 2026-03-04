@@ -16,6 +16,7 @@ from __future__ import annotations
 import logging
 import os
 import time
+import json
 
 from dotenv import load_dotenv
 from fastapi import FastAPI
@@ -23,9 +24,22 @@ from fastapi import FastAPI
 from cache import cache_get, cache_key, cache_put
 from llm_provider import estimate_cost, get_provider
 from mock_grooves import get_mock_groove
-from models import GenerateRequest, GenerateResponse, MidiPlan
+from models import (
+    Controls,
+    GenerateRequest,
+    GenerateResponse,
+    MidiPlan,
+    SurpriseRequest,
+    SurpriseResponse,
+    SurpriseResult,
+)
 from presets import get_preset, list_presets
-from prompts import build_system_prompt, build_user_prompt
+from prompts import (
+    build_surprise_system_prompt,
+    build_surprise_user_prompt,
+    build_system_prompt,
+    build_user_prompt,
+)
 from usage import get_usage_summary, log_usage
 from validation import parse_llm_response
 
@@ -56,6 +70,131 @@ def presets_list() -> list[dict]:
 def usage_stats() -> dict:
     """Return usage statistics for LLM credit tracking."""
     return get_usage_summary()
+
+
+def _extract_json_object(text: str) -> dict:
+    text = text.strip()
+    fence_start = text.find("```")
+    if fence_start >= 0:
+        fence_end = text.rfind("```")
+        if fence_end > fence_start:
+            text = text[fence_start + 3:fence_end].strip()
+            if text.startswith("json"):
+                text = text[4:].strip()
+
+    brace_start = text.find("{")
+    if brace_start >= 0:
+        depth = 0
+        for i in range(brace_start, len(text)):
+            if text[i] == "{":
+                depth += 1
+            elif text[i] == "}":
+                depth -= 1
+                if depth == 0:
+                    text = text[brace_start:i + 1]
+                    break
+
+    obj = json.loads(text)
+    if not isinstance(obj, dict):
+        raise ValueError("Expected JSON object")
+    return obj
+
+
+@app.post("/surprise", response_model=SurpriseResponse)
+def surprise(req: SurpriseRequest) -> SurpriseResponse:
+    start_time = time.monotonic()
+
+    preset = get_preset(req.preset_id)
+    if preset is None:
+        return SurpriseResponse(ok=False, error=f"Unknown preset_id: {req.preset_id}")
+
+    is_mock = os.getenv("SERVICE_MOCK", "1") == "1"
+
+    if is_mock:
+        suggestion = (
+            f"Emotional groove idea for {preset.name}: syncopated breakbeat with ghost snare movement, "
+            f"offbeat percussion texture, and a gentle phrase lift near the end."
+        )
+        result = SurpriseResult(
+            prompt=suggestion,
+            controls=Controls(**preset.defaults.model_dump()),
+            sound_suggestion="Try a textured breakbeat kit with airy hats and soft snare tails.",
+        )
+        duration_ms = int((time.monotonic() - start_time) * 1000)
+        log_usage(
+            provider="mock",
+            model="mock",
+            prompt_tokens=0,
+            completion_tokens=0,
+            preset_id=req.preset_id,
+            bars=8,
+            cached=False,
+            duration_ms=duration_ms,
+        )
+        return SurpriseResponse(ok=True, summary="surprise prompt ready (mock)", surprise=result)
+
+    try:
+        provider = get_provider()
+    except ValueError as e:
+        return SurpriseResponse(ok=False, error=str(e))
+
+    system_prompt = build_surprise_system_prompt()
+    user_prompt = build_surprise_user_prompt(preset, req.color)
+
+    last_error = ""
+    for attempt in range(1, MAX_LLM_RETRIES + 1):
+        try:
+            llm = provider.generate(
+                system_prompt,
+                user_prompt,
+                timeout=LLM_TIMEOUT_SECONDS,
+                model_override=req.model,
+            )
+            obj = _extract_json_object(llm.text)
+            prompt_text = str(obj.get("prompt", "")).strip()
+            controls_obj = obj.get("controls", {})
+            sound_suggestion = str(obj.get("sound_suggestion", "")).strip()
+
+            if not prompt_text:
+                raise ValueError("Missing surprise prompt text")
+
+            controls = Controls(**controls_obj)
+            result = SurpriseResult(
+                prompt=prompt_text,
+                controls=controls,
+                sound_suggestion=sound_suggestion,
+            )
+
+            cost = estimate_cost(llm.model, llm.prompt_tokens, llm.completion_tokens)
+            duration_ms = int((time.monotonic() - start_time) * 1000)
+            log_usage(
+                provider=llm.provider,
+                model=llm.model,
+                prompt_tokens=llm.prompt_tokens,
+                completion_tokens=llm.completion_tokens,
+                estimated_cost_usd=cost,
+                preset_id=req.preset_id,
+                bars=8,
+                cached=False,
+                duration_ms=duration_ms,
+            )
+
+            return SurpriseResponse(
+                ok=True,
+                summary=(
+                    f"surprise ready | {llm.provider}:{llm.model} | "
+                    f"{llm.prompt_tokens}+{llm.completion_tokens} tokens | ${cost:.4f}"
+                ),
+                surprise=result,
+            )
+        except Exception as e:
+            last_error = f"Surprise parse/generation failed (attempt {attempt}): {e}"
+            log.warning(last_error)
+
+    return SurpriseResponse(
+        ok=False,
+        error=f"Failed after {MAX_LLM_RETRIES} attempts. Last error: {last_error}",
+    )
 
 
 @app.post("/generate", response_model=GenerateResponse)

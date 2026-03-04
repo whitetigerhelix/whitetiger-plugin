@@ -9,7 +9,12 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from models import ClipInfo, Controls, GenerateRequest
 from presets import PRESETS, get_preset
-from prompts import build_system_prompt, build_user_prompt
+from prompts import (
+    build_surprise_system_prompt,
+    build_surprise_user_prompt,
+    build_system_prompt,
+    build_user_prompt,
+)
 
 
 class TestSystemPrompt:
@@ -39,6 +44,24 @@ class TestSystemPrompt:
     def test_mentions_max_notes(self):
         prompt = build_system_prompt()
         assert "5000" in prompt
+
+
+class TestSurprisePrompt:
+    def test_surprise_system_prompt_contains_schema(self):
+        prompt = build_surprise_system_prompt()
+        assert '"prompt"' in prompt
+        assert '"controls"' in prompt
+        assert '"sound_suggestion"' in prompt
+
+    def test_surprise_system_prompt_mentions_color(self):
+        prompt = build_surprise_system_prompt()
+        assert "color" in prompt.lower()
+
+    def test_surprise_user_prompt_contains_preset_and_color(self):
+        preset = get_preset("breaks_atmos_130")
+        prompt = build_surprise_user_prompt(preset, 0.75)
+        assert "breaks_atmos_130" in prompt
+        assert "0.75" in prompt
 
 
 class TestUserPrompt:

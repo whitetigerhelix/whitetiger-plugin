@@ -38,9 +38,38 @@ Rules:
 - Make patterns loop well."""
 
 
+SURPRISE_SYSTEM_PROMPT = """You are a music production assistant that creates surprise prompt ideas for drum groove generation.
+
+Return ONLY valid JSON in this exact schema:
+{
+  "prompt": "<string>",
+  "controls": {
+    "density": <0..1>,
+    "complexity": <0..1>,
+    "swing": <0..1>,
+    "humanize_ms": <0..25>,
+    "velocity_jitter": <0..15>
+  },
+  "sound_suggestion": "<string>"
+}
+
+Rules:
+- Return JSON only. No markdown, no prose.
+- Keep prompt musically coherent with the provided preset style.
+- Use color (0=tight/safe, 1=adventurous) to control how bold the prompt and controls are.
+- Keep controls realistic for drum groove generation.
+- sound_suggestion must be a stylistic suggestion only (never claim to scan local files).
+"""
+
+
 def build_system_prompt() -> str:
     """Return the system prompt that instructs the LLM to output valid JSON."""
     return SYSTEM_PROMPT
+
+
+def build_surprise_system_prompt() -> str:
+    """Return system prompt for surprise prompt/control generation."""
+    return SURPRISE_SYSTEM_PROMPT
 
 
 def build_user_prompt(
@@ -74,11 +103,25 @@ def build_user_prompt(
     prompt += f"\nSeed: {seed}"
 
     if request.allowed_pitches:
-      allowed = ", ".join(str(p) for p in request.allowed_pitches)
-      prompt += f"\nAllowed MIDI pitches: [{allowed}]"
+        allowed = ", ".join(str(p) for p in request.allowed_pitches)
+        prompt += f"\nAllowed MIDI pitches: [{allowed}]"
 
     if request.instrument_hints:
-      hints = "; ".join(request.instrument_hints)
-      prompt += f"\nInstrument/layer hints: {hints}"
+        hints = "; ".join(request.instrument_hints)
+        prompt += f"\nInstrument/layer hints: {hints}"
 
     return prompt
+
+
+def build_surprise_user_prompt(preset: Preset, color: float) -> str:
+    """Build user prompt for surprise prompt/control generation."""
+    defaults = preset.defaults
+    return (
+        f"Preset: {preset.id} ({preset.name})\n"
+        f"Color: {color:.2f} (0=tight/safe, 1=adventurous)\n"
+        f"Default controls: density={defaults.density}, complexity={defaults.complexity}, "
+        f"swing={defaults.swing}, humanize_ms={defaults.humanize_ms}, "
+        f"velocity_jitter={defaults.velocity_jitter}\n"
+        "Generate one surprise drum-groove prompt idea with matching control values. "
+        "The prompt should be emotionally coherent and production-usable."
+    )

@@ -61,3 +61,22 @@ class GenerateResponse(BaseModel):
     summary: str = ""
     plan: MidiPlan | None = None
     error: str | None = None
+
+
+class SurpriseRequest(BaseModel):
+    preset_id: str
+    color: float = Field(default=0.5, ge=0, le=1)
+    model: str | None = None
+
+
+class SurpriseResult(BaseModel):
+    prompt: str
+    controls: Controls
+    sound_suggestion: str = ""
+
+
+class SurpriseResponse(BaseModel):
+    ok: bool = True
+    summary: str = ""
+    surprise: SurpriseResult | None = None
+    error: str | None = None

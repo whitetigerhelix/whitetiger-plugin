@@ -126,6 +126,28 @@ class TestGenerate:
         assert resp.json()["ok"] is True
 
 
+class TestSurprise:
+    def test_surprise_valid_request(self, client):
+        resp = client.post("/surprise", json={"preset_id": "breaks_atmos_130", "color": 0.6})
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["ok"] is True
+        assert data["surprise"] is not None
+        assert data["surprise"]["prompt"] != ""
+        assert "controls" in data["surprise"]
+
+    def test_surprise_unknown_preset(self, client):
+        resp = client.post("/surprise", json={"preset_id": "does_not_exist", "color": 0.4})
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["ok"] is False
+        assert "Unknown preset_id" in data["error"]
+
+    def test_surprise_color_range_validation(self, client):
+        resp = client.post("/surprise", json={"preset_id": "breaks_atmos_130", "color": 1.5})
+        assert resp.status_code == 422
+
+
 class TestUsage:
     def test_usage_returns_stats(self, client):
         resp = client.get("/usage")
