@@ -36,12 +36,14 @@ See [Docs/Architecture.md](Docs/Architecture.md) for full architecture and data 
 
 1. Prepare Python service
 
-- Run setup from [service/setup.sh](service/setup.sh)
+- Run setup from [service/setup.ps1](service/setup.ps1) (Windows)
+- Or use [service/setup.cmd](service/setup.cmd) from cmd
+- Bash alternative: [service/setup.sh](service/setup.sh)
 - This creates [service/.venv](service/.venv), installs dependencies, and runs tests
 
-```bash
+```powershell
 cd service
-./setup.sh
+.\setup.ps1
 ```
 
 2. Configure environment

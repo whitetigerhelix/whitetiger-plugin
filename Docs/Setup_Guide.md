@@ -47,13 +47,30 @@ SERVICE_MOCK=0
 
 A setup script handles virtual environment creation, dependency installation, and verification. A virtual environment is required (other Python projects exist on this machine).
 
-```bash
+### Windows (PowerShell or cmd) — Recommended
+
+```powershell
 cd service
 
-# Run the setup script (creates venv, installs deps, copies .env, runs tests)
+# PowerShell native setup (creates venv, installs deps, copies .env, runs tests)
+.\setup.ps1
+
+# If needed, force a specific Python executable (recommended on machines with many Python installs)
+.\setup.ps1 -Python "C:\Users\<user>\AppData\Local\Programs\Python\Python312\python.exe"
+```
+
+```cmd
+cd service
+setup.cmd
+```
+
+### Bash / Git Bash (Optional)
+
+```bash
+cd service
 ./setup.sh
 
-# If your Python 3.12+ isn't the default `python`, specify it:
+# If your Python 3.12+ isn't default in Bash
 PYTHON="C:/Users/<user>/AppData/Local/Programs/Python/Python312/python.exe" ./setup.sh
 ```
 
@@ -66,6 +83,12 @@ The script:
 5. Runs all tests to verify everything works
 
 **Re-run anytime** to update dependencies or verify the environment after pulling changes.
+
+### Why `./setup.sh` opened in an editor
+
+On Windows PowerShell/cmd, `.sh` files are not executed natively unless a Bash shell handles them. If `./setup.sh` opens in an editor, use `setup.ps1` or `setup.cmd` instead.
+
+If you installed Git for Windows, Git Bash is included. It is a Bash terminal that can run `.sh` scripts, but it is optional for this project now that PowerShell/cmd scripts are available.
 
 ### Manual Setup
 
@@ -153,6 +176,40 @@ For developing the M4L device without making LLM calls:
 
 ```bash
 SERVICE_MOCK=1 uvicorn app:app --host 127.0.0.1 --port 8787
+```
+
+### Convenience .env Configuration Script (Windows)
+
+Use these scripts to update `.env` without manual editing.
+
+PowerShell script: `service/configure_env.ps1`  
+cmd wrapper: `service/configure_env.cmd`
+
+Examples:
+
+```powershell
+cd service
+
+# Set Azure provider and core values
+.\configure_env.ps1 -Provider azure -AzureEndpoint "https://<resource>.openai.azure.com/" -AzureApiKey "<key>" -AzureDeployment "gpt-4o-mini" -UseReal
+
+# Switch to mock mode quickly
+.\configure_env.ps1 -UseMock
+
+# Return to real calls
+.\configure_env.ps1 -UseReal
+
+# Tune timeout and port
+.\configure_env.ps1 -LlmTimeoutSeconds 45 -ServicePort 8787
+
+# Show current values (API keys are masked)
+.\configure_env.ps1 -Show
+```
+
+```cmd
+cd service
+configure_env.cmd -UseMock
+configure_env.cmd -UseReal
 ```
 
 Mock mode returns hardcoded groove patterns, useful for testing the full pipeline without burning API credits.

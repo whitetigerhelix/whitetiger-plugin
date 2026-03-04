@@ -23,6 +23,16 @@ class LLMResult:
     provider: str
 
 
+@dataclass(frozen=True)
+class ProviderCapability:
+    """Describes provider readiness and configuration requirements."""
+
+    name: str
+    implemented: bool
+    required_env: tuple[str, ...]
+    notes: str
+
+
 class LLMProvider(ABC):
     """Abstract base for LLM providers."""
 
@@ -135,7 +145,9 @@ class AnthropicProvider(LLMProvider):
         raise NotImplementedError(
             "Anthropic provider is not yet implemented. "
             "Set LLM_PROVIDER=azure to use Azure OpenAI, "
-            "or set SERVICE_MOCK=1 for mock mode."
+            "or set SERVICE_MOCK=1 for mock mode. "
+            "If you want Anthropic later, you will need Anthropic API billing/key "
+            "(Claude chat subscription is separate from API access)."
         )
 
     def generate(
@@ -157,12 +169,38 @@ _PROVIDERS: dict[str, type[LLMProvider]] = {
 }
 
 
+_PROVIDER_CAPABILITIES: dict[str, ProviderCapability] = {
+    "azure": ProviderCapability(
+        name="azure",
+        implemented=True,
+        required_env=(
+            "AZURE_OPENAI_ENDPOINT",
+            "AZURE_OPENAI_API_KEY",
+            "AZURE_OPENAI_DEPLOYMENT",
+        ),
+        notes="Production-ready provider path.",
+    ),
+    "anthropic": ProviderCapability(
+        name="anthropic",
+        implemented=False,
+        required_env=("ANTHROPIC_API_KEY", "ANTHROPIC_MODEL"),
+        notes="Planned provider path; stub only in current build.",
+    ),
+}
+
+
+def list_provider_capabilities() -> dict[str, ProviderCapability]:
+    """Return capability metadata for all known providers."""
+    return dict(_PROVIDER_CAPABILITIES)
+
+
 def get_provider(provider_name: str | None = None) -> LLMProvider:
     """Create and return the configured LLM provider.
 
     Reads LLM_PROVIDER env var if provider_name is not specified.
     """
-    name = provider_name or os.getenv("LLM_PROVIDER", "azure")
+    raw_name = provider_name if provider_name is not None else os.getenv("LLM_PROVIDER", "azure")
+    name = raw_name.strip().lower()
     provider_cls = _PROVIDERS.get(name)
 
     if provider_cls is None:

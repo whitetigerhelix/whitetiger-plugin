@@ -18,6 +18,7 @@ from llm_provider import (
     LLMResult,
     estimate_cost,
     get_provider,
+    list_provider_capabilities,
 )
 
 
@@ -102,6 +103,33 @@ class TestProviderFactory:
             with pytest.raises(ValueError, match="AZURE_OPENAI_DEPLOYMENT"):
                 get_provider("azure")
 
+    def test_provider_name_is_normalized(self):
+        env = {
+            "AZURE_OPENAI_ENDPOINT": "https://test.openai.azure.com",
+            "AZURE_OPENAI_API_KEY": "test-key",
+            "AZURE_OPENAI_DEPLOYMENT": "test-deploy",
+        }
+        with patch.dict(os.environ, env, clear=False):
+            provider = get_provider(" Azure ")
+            assert isinstance(provider, AzureOpenAIProvider)
+
+
+class TestProviderCapabilities:
+    def test_capabilities_include_known_providers(self):
+        caps = list_provider_capabilities()
+        assert "azure" in caps
+        assert "anthropic" in caps
+
+    def test_azure_capability_marked_implemented(self):
+        caps = list_provider_capabilities()
+        assert caps["azure"].implemented is True
+        assert "AZURE_OPENAI_API_KEY" in caps["azure"].required_env
+
+    def test_anthropic_capability_marked_not_implemented(self):
+        caps = list_provider_capabilities()
+        assert caps["anthropic"].implemented is False
+        assert "ANTHROPIC_API_KEY" in caps["anthropic"].required_env
+
 
 class TestAnthropicStub:
     def test_init_raises_not_implemented(self):
@@ -114,6 +142,10 @@ class TestAnthropicStub:
 
     def test_error_message_suggests_mock(self):
         with pytest.raises(NotImplementedError, match="SERVICE_MOCK=1"):
+            AnthropicProvider()
+
+    def test_error_message_mentions_api_vs_subscription(self):
+        with pytest.raises(NotImplementedError, match="subscription"):
             AnthropicProvider()
 
 
