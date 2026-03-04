@@ -43,6 +43,7 @@ m4l/                         Max for Live device
     groove_http.js           HTTP client (POST /generate, GET /health etc.)
     note_writer.js           Clip writer (Live API note insertion)
     post_process.js          Swing, humanize, velocity jitter (seeded RNG)
+    preset_defaults_unpacker.js  Unpacks preset defaults JSON → individual dial values
 service/                     Python FastAPI service (.venv/ for virtual env)
   app.py                     FastAPI entry point (/health, /generate, /presets, /usage)
   models.py                  Pydantic v2 request/response models

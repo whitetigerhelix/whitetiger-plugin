@@ -252,6 +252,98 @@ User clicks [Generate]
 
 ---
 
+## 11. Preset Defaults → Control Dials
+
+When the user selects a preset from the umenu, the control dials should update to that preset's defaults. This uses `response_router.js` outlet 5 and `preset_defaults_unpacker.js`.
+
+### Add the unpacker JS object
+
+1. Create a `js` object: type `js preset_defaults_unpacker.js`
+2. This object has **5 outlets**, one per control:
+   - Outlet 0: density (float, 0–1)
+   - Outlet 1: complexity (float, 0–1)
+   - Outlet 2: swing (float, 0–1)
+   - Outlet 3: humanize_ms (float, 0–25)
+   - Outlet 4: velocity_jitter (int, 0–15)
+
+### Wiring
+
+```
+response_router.js outlet 5
+         │
+         │ JSON string: {"density":0.75,"complexity":0.65,...}
+         ▼
+  js preset_defaults_unpacker.js
+    │       │       │       │       │
+    │out0   │out1   │out2   │out3   │out4
+    ▼       ▼       ▼       ▼       ▼
+ Density Complx  Swing   Hum ms  Vjit
+ dial    dial    dial    dial    dial
+```
+
+Each outlet sends a number directly to the corresponding `live.dial`. The dial updates its display and also fires its output, which flows through the existing `set controls:density $1` (etc.) messages into `request_builder`, keeping the request in sync automatically.
+
+> **Note:** `response_router.js` now has **6 outlets** (was 5). After saving the JS file, you may need to close and reopen the device (or delete and re-create the `js response_router.js` object) for Max to pick up the new outlet count.
+
+---
+
+## 12. Variation & Randomize Seed Buttons
+
+These buttons let users quickly iterate on grooves. No new JS files needed — `request_builder.js` already supports `set variation <N>` and `set seed <N>`.
+
+### Next Variation button
+
+Increments the variation counter by 1. Uses `[i]` to break the feedback loop — the Variation numbox stores its value silently in `[i]`'s right inlet, and the button bang triggers `[i]`'s left inlet to read it.
+
+```
+[Next Var button]
+       │ bang
+       ▼
+     [i]  ←─── right inlet: Variation numbox output (stores silently)
+       │ outputs stored value on bang
+       ▼
+     [+ 1]
+       │
+       ▼
+   Variation numbox        ← sets display AND fires output
+       │
+       ├──→ [i] right inlet (stores new value for next click)
+       │
+       ▼
+   [set variation $1]
+       │
+       ▼
+   request_builder
+```
+
+**Critical:** The Variation numbox output must go to `[i]`'s **right** inlet (silent store), NOT to `[+ 1]` or `[i]`'s left inlet. This prevents a feedback loop where each increment triggers another.
+
+### Randomize Seed button
+
+Picks a random seed (0–99999) and sets it:
+
+```
+[Rand Seed button]
+       │ bang
+       ▼
+ [random 100000]                 ← generates 0–99999
+       │
+       ▼
+   Seed numbox                   ← updates display, fires output
+       │
+       ▼
+   [set seed $1]
+       │
+       ▼
+   request_builder
+```
+
+### Optional: Auto-generate after button press
+
+If you want Generate to fire automatically after changing seed or variation, wire `delay 50` → `request_builder` bang inlet (NOT `prepend generate` — that bypasses JSON serialization and causes HTTP 422). This is optional — you may prefer to click Generate manually after adjusting seed/variation.
+
+---
+
 ## Tips
 
 - **File paths:** If Max can't find `groove_http.js` etc., add `m4l/js/` to Max's search path (Options → File Preferences)

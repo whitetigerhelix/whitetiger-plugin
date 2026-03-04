@@ -131,25 +131,22 @@ function _write_notes_to_clip(clip_api, plan) {
     // Clear existing notes first
     _clear_clip_notes(clip_api);
 
-    // Write notes using legacy API (most compatible across Live versions)
-    // LiveAPI.call doesn't throw JS exceptions on failure, so we log and check.
+    // Write notes using add_new_notes (Live 11+ API).
+    // Single atomic call with a dict of note objects.
     try {
-        clip_api.call("select_all_notes");
-        clip_api.call("replace_selected_notes");
-        clip_api.call("notes", note_count);
-
+        var note_array = [];
         for (var i = 0; i < note_count; i++) {
             var n = notes[i];
-            clip_api.call("note",
-                Math.round(n.pitch),
-                n.start_beats.toFixed(4),
-                n.dur_beats.toFixed(4),
-                Math.round(n.vel),
-                Math.round(n.mute)
-            );
+            note_array.push({
+                pitch: Math.round(n.pitch),
+                start_time: parseFloat(n.start_beats.toFixed(4)),
+                duration: parseFloat(n.dur_beats.toFixed(4)),
+                velocity: Math.round(n.vel),
+                mute: Math.round(n.mute)
+            });
         }
 
-        clip_api.call("done");
+        clip_api.call("add_new_notes", { notes: note_array });
         outlet(0, "wrote " + note_count + " notes to clip");
         post("note_writer: wrote " + note_count + " notes\n");
     } catch (e) {

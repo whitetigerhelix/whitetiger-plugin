@@ -12,6 +12,7 @@
  *   2: Status message string (for status display — prepend "set" before textedit)
  *   3: umenu messages (clear, append — wire directly to umenu)
  *   4: preset_id string (when user selects from umenu via "select" message)
+ *   5: preset defaults JSON (density, complexity, swing, humanize_ms, velocity_jitter)
  *
  * Messages:
  *   anything      — parse JSON response and route to outlets
@@ -22,9 +23,11 @@
 
 autowatch = 1;
 inlets = 1;
-outlets = 5;
+outlets = 6;
 
 var preset_ids = [];
+var preset_defaults = [];
+var last_selected_idx = -1;
 
 function anything() {
     var str = arrayfromargs(messagename, arguments).join(" ");
@@ -77,6 +80,12 @@ function anything() {
 function select(idx) {
     idx = Math.floor(idx);
     if (idx >= 0 && idx < preset_ids.length) {
+        // Only push defaults to dials when the preset actually changes,
+        // not when the same index re-fires (e.g., during Generate flow)
+        if (idx !== last_selected_idx) {
+            outlet(5, JSON.stringify(preset_defaults[idx]));
+            last_selected_idx = idx;
+        }
         outlet(4, preset_ids[idx]);
     }
 }
@@ -98,9 +107,11 @@ function _handle_generate(resp) {
 
 function _handle_presets(arr) {
     preset_ids = [];
+    preset_defaults = [];
     outlet(3, "clear");
     for (var i = 0; i < arr.length; i++) {
         preset_ids.push(arr[i].id);
+        preset_defaults.push(arr[i].defaults || {});
         outlet(3, "append", arr[i].name);
     }
     outlet(2, "loaded " + arr.length + " presets");

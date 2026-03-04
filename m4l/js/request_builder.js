@@ -20,6 +20,8 @@ autowatch = 1;
 inlets = 1;
 outlets = 1;
 
+var _REQUIRED_FIELDS = ["preset_id", "mode", "drum_map"];
+
 var request = {};
 
 function clear() {
@@ -57,6 +59,20 @@ function set() {
 }
 
 function bang() {
+    // Check required fields before sending
+    var missing = [];
+    for (var i = 0; i < _REQUIRED_FIELDS.length; i++) {
+        if (request[_REQUIRED_FIELDS[i]] === undefined) {
+            missing.push(_REQUIRED_FIELDS[i]);
+        }
+    }
+    if (missing.length > 0) {
+        var msg = "request_builder: missing required fields: " + missing.join(", ");
+        post(msg + "\n");
+        error(msg + "\n");
+        return;
+    }
+
     var json = JSON.stringify(request);
     post("request_builder: " + json + "\n");
     outlet(0, json);

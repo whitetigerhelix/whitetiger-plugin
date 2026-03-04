@@ -73,17 +73,18 @@ Implementation roadmap for AI Groove Writer. Milestones are roughly sequential, 
 
 ### Milestone 7: Presets & UX Polish (in progress)
 
-- [ ] All 5 presets fully wired:
+- [x] All 5 presets fully wired:
   - `breaks_atmos_130` — Atmospheric Breakbeats (primary)
   - `breaks_driving` — Progressive Breaks
   - `chill_psychill` — Downtempo / Psychill
   - `four_on_floor` — 4-to-the-Floor
   - `halftime_broken` — Half-Time / Broken
-- [ ] Preset dropdown updates default control values in UI
+- [x] Preset dropdown updates default control values in UI
 - [x] Summary text display from model response
 - [x] Error message display with status
-- [ ] Variation and Randomize Seed buttons
-- [ ] Modernize `note_writer.js`: replace deprecated `replace_selected_notes` / `notes` / `note` / `done` with `apply_note_modifications` (Live 11+ API)
+- [x] Variation and Randomize Seed buttons (wired, auto-generate via delay → request_builder)
+- [x] Modernize `note_writer.js`: replaced deprecated `replace_selected_notes` chain with `add_new_notes` (Live 11+ API)
+- [x] `response_router.js`: store preset defaults from `/presets`, output on new outlet 5 when preset selected
 - [x] Per-request model override (`model` field on GenerateRequest)
 
 ### Milestone 8: Demo Hardening
@@ -104,7 +105,7 @@ Start/stop the Python service and configure API keys directly from the M4L devic
 - [ ] `service/tests/conftest.py` — add `autouse` fixture for `clear_overrides()` cleanup
 - [ ] `service/tests/test_config.py` — tests for config and shutdown endpoints
 - [ ] `m4l/js/groove_http.js` — add `config`, `config_status`, `shutdown` message handlers
-- [ ] `m4l/js/response_router.js` — add outlet 5 for config status routing
+- [ ] `m4l/js/response_router.js` — add outlet 6 for config status routing (outlet 5 already used for preset defaults)
 - [ ] `m4l/js/server_launcher.js` — Node.js child process launcher for Max's `node.script`
 - [ ] Documentation updates (Architecture, Setup Guide, M4L Build Guide)
 
