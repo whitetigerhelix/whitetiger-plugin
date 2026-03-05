@@ -25,7 +25,7 @@ class TestPresets:
         assert resp.status_code == 200
         data = resp.json()
         assert isinstance(data, list)
-        assert len(data) == 5
+        assert len(data) == 11
 
     def test_presets_have_required_fields(self, client):
         resp = client.get("/presets")

@@ -25,10 +25,13 @@ class Controls(BaseModel):
     velocity_jitter: int = Field(default=6, ge=0, le=15)
 
 
+VALID_MODES = ("drums", "bass", "melody", "chords")
+
+
 class GenerateRequest(BaseModel):
     prompt: str
     preset_id: str
-    mode: Literal["drums"] = "drums"
+    mode: str = "drums"
     clip: ClipInfo = Field(default_factory=ClipInfo)
     controls: Controls = Field(default_factory=Controls)
     seed: int = 12345
@@ -39,6 +42,8 @@ class GenerateRequest(BaseModel):
     instrument_hints: list[str] | None = Field(default=None)
     instrument_context: list[dict] | None = Field(default=None)
     reference_pattern: list[dict] | None = Field(default=None)
+    key: str | None = Field(default=None)
+    scale: str | None = Field(default=None)
 
 
 class NoteEvent(BaseModel):
@@ -51,7 +56,7 @@ class NoteEvent(BaseModel):
 
 class MidiPlan(BaseModel):
     version: int = 1
-    mode: Literal["drums"] = "drums"
+    mode: str = "drums"
     bars: int
     time_sig_num: int
     time_sig_den: int
@@ -81,6 +86,24 @@ class SurpriseResponse(BaseModel):
     ok: bool = True
     summary: str = ""
     surprise: SurpriseResult | None = None
+    error: str | None = None
+
+
+class RefineRequest(BaseModel):
+    current_notes: list[dict]
+    instruction: str
+    mode: str = "drums"
+    clip: ClipInfo = Field(default_factory=ClipInfo)
+    preset_id: str | None = None
+    model: str | None = None
+    key: str | None = None
+    scale: str | None = None
+
+
+class RefineResponse(BaseModel):
+    ok: bool = True
+    summary: str = ""
+    plan: MidiPlan | None = None
     error: str | None = None
 
 

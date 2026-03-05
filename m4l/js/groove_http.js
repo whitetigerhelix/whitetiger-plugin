@@ -7,6 +7,7 @@
  *
  * Messages:
  *   generate <json_string>  — POST to /generate
+ *   refine <json_string>    — POST to /refine
  *   surprise <json_string>  — POST to /surprise
  *   config <json_string>    — POST to /config
  *   config_status           — GET /config/status
@@ -100,6 +101,18 @@ function config_status() {
 
 function shutdown_service() {
   _post("/shutdown", "{}");
+}
+
+function refine() {
+  var args = arrayfromargs(arguments);
+  var json_str = args.join(" ");
+  if (!json_str || json_str.length === 0) {
+    outlet(1, "error: refine requires a JSON request string");
+    return;
+  }
+  post("groove_http: sending to /refine:\n");
+  post(json_str + "\n");
+  _post("/refine", json_str);
 }
 
 // --- Internal helpers ---

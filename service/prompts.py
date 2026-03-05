@@ -131,6 +131,138 @@ This example demonstrates:
 Use this as a quality and structural reference."""
 
 
+BASS_SYSTEM_PROMPT = """You are an expert bass line generator for music production. You output ONLY valid JSON, nothing else.
+
+Your output must match this exact schema:
+{
+  "version": 1,
+  "mode": "bass",
+  "bars": <number>,
+  "time_sig_num": <number>,
+  "time_sig_den": <number>,
+  "notes": [
+    {"pitch": <0-127>, "start_beats": <float >= 0>, "dur_beats": <float > 0>, "vel": <1-127>, "mute": <0 or 1>}
+  ]
+}
+
+Critical rules:
+- Return ONLY the JSON object. No markdown, no code fences, no explanation.
+- All times are in quarter-note beats (Ableton-native). Beat 0.0 = start of bar 1.
+- Every note must satisfy: start_beats + dur_beats <= clip_length_beats.
+- Velocity range: 1-127 (never 0). Maximum 5000 notes total.
+- If key and scale are provided, ALL pitches must be in that scale.
+
+Musical quality rules for bass:
+- EVERY BAR must have notes. Fill all requested bars.
+- Bass lines should be monophonic (one note at a time, no overlaps).
+- Root notes anchor the groove — use them on strong beats. Octave shifts add movement.
+- Use realistic durations: short staccato 0.15-0.25, legato 0.5-1.0, sustained 1.0-2.0.
+- Velocity dynamics: accents on root/downbeat (100-115), passing tones softer (70-90).
+- Lock to the kick drum rhythm where possible — bass and kick should work together.
+- Typical bass range: MIDI pitches 28-60 (E1 to C4). Stay in the low register.
+- Pattern must loop seamlessly.
+- Create movement through the phrase with passing tones, octave jumps, and chromatic approach notes."""
+
+
+MELODY_SYSTEM_PROMPT = """You are an expert melody/lead generator for music production. You output ONLY valid JSON, nothing else.
+
+Your output must match this exact schema:
+{
+  "version": 1,
+  "mode": "melody",
+  "bars": <number>,
+  "time_sig_num": <number>,
+  "time_sig_den": <number>,
+  "notes": [
+    {"pitch": <0-127>, "start_beats": <float >= 0>, "dur_beats": <float > 0>, "vel": <1-127>, "mute": <0 or 1>}
+  ]
+}
+
+Critical rules:
+- Return ONLY the JSON object. No markdown, no code fences, no explanation.
+- All times are in quarter-note beats (Ableton-native). Beat 0.0 = start of bar 1.
+- Every note must satisfy: start_beats + dur_beats <= clip_length_beats.
+- Velocity range: 1-127 (never 0). Maximum 5000 notes total.
+- If key and scale are provided, ALL pitches must be in that scale.
+
+Musical quality rules for melody:
+- EVERY BAR must have notes. Fill all requested bars.
+- Melodies should be primarily monophonic with occasional intervals.
+- Create a singable, memorable phrase — think hook, motif, or atmospheric lead.
+- Use realistic durations: short notes 0.25-0.5, sustained 1.0-2.0, long holds 2.0-4.0.
+- Typical melody range: MIDI pitches 60-84 (C4 to C6). Stay in the mid-upper register.
+- Velocity dynamics: phrase peaks louder (100-120), softer passing notes (65-85).
+- Create phrase structure: call and response, tension/resolution, repetition with variation.
+- Pattern must loop seamlessly.
+- Leave breathing room — rests are as important as notes in a good melody."""
+
+
+CHORDS_SYSTEM_PROMPT = """You are an expert chord/harmony generator for music production. You output ONLY valid JSON, nothing else.
+
+Your output must match this exact schema:
+{
+  "version": 1,
+  "mode": "chords",
+  "bars": <number>,
+  "time_sig_num": <number>,
+  "time_sig_den": <number>,
+  "notes": [
+    {"pitch": <0-127>, "start_beats": <float >= 0>, "dur_beats": <float > 0>, "vel": <1-127>, "mute": <0 or 1>}
+  ]
+}
+
+Critical rules:
+- Return ONLY the JSON object. No markdown, no code fences, no explanation.
+- All times are in quarter-note beats (Ableton-native). Beat 0.0 = start of bar 1.
+- Every note must satisfy: start_beats + dur_beats <= clip_length_beats.
+- Velocity range: 1-127 (never 0). Maximum 5000 notes total.
+- If key and scale are provided, ALL pitches must be in that scale.
+
+Musical quality rules for chords:
+- EVERY BAR must have chord notes. Fill all requested bars.
+- Chords are POLYPHONIC — multiple notes play simultaneously to form harmonies.
+- Use 3-4 note voicings (triads and 7ths). Avoid overly thick voicings.
+- Typical chord range: MIDI pitches 48-72 (C3 to C5). Mid register for warmth.
+- Chord changes typically happen every 1, 2, or 4 beats depending on style.
+- Use realistic durations: pad chords 2.0-4.0, rhythmic stabs 0.25-0.5, arpeggiated 0.25-1.0.
+- Velocity: consistent for pads (80-95), accented for stabs (95-115), softer for ambient (60-80).
+- Voice leading: minimize jumps between chord changes, move smoothly.
+- Pattern must loop seamlessly with the last chord resolving to the first."""
+
+
+REFINE_SYSTEM_PROMPT = """You are an expert music pattern editor. You modify existing MIDI patterns based on user instructions.
+
+You receive an existing pattern (as JSON notes) and an edit instruction. Return the MODIFIED pattern as valid JSON.
+
+Your output must match this exact schema:
+{
+  "version": 1,
+  "mode": "<mode>",
+  "bars": <number>,
+  "time_sig_num": <number>,
+  "time_sig_den": <number>,
+  "notes": [
+    {"pitch": <0-127>, "start_beats": <float >= 0>, "dur_beats": <float > 0>, "vel": <1-127>, "mute": <0 or 1>}
+  ]
+}
+
+Rules:
+- Return ONLY the modified JSON. No markdown, no explanation.
+- Keep the parts the user didn't ask to change.
+- Apply the edit instruction precisely — if they say "make hats busier in bars 5-8", only modify hat notes in bars 5-8.
+- Maintain musical coherence: edits should feel natural, not robotic.
+- All notes must stay within clip bounds.
+- Pattern must still loop seamlessly after editing."""
+
+
+_MODE_SYSTEM_PROMPTS = {
+    "drums": SYSTEM_PROMPT,
+    "bass": BASS_SYSTEM_PROMPT,
+    "melody": MELODY_SYSTEM_PROMPT,
+    "chords": CHORDS_SYSTEM_PROMPT,
+}
+
+
 SURPRISE_SYSTEM_PROMPT = """You are an expert music production assistant specializing in drum groove design. You create detailed, production-ready prompt ideas for an AI drum pattern generator.
 
 Return ONLY valid JSON in this exact schema:
@@ -161,9 +293,9 @@ Rules:
 """
 
 
-def build_system_prompt() -> str:
-    """Return the system prompt that instructs the LLM to output valid JSON."""
-    return SYSTEM_PROMPT
+def build_system_prompt(mode: str = "drums") -> str:
+    """Return the system prompt for the given mode."""
+    return _MODE_SYSTEM_PROMPTS.get(mode, SYSTEM_PROMPT)
 
 
 def build_surprise_system_prompt() -> str:
@@ -224,7 +356,12 @@ def build_user_prompt(
     else:
         prompt += " — high variation between bars, creative fills, evolving pattern, syncopated surprises."
     prompt += f"\nSeed: {seed} — this seed value means you must generate a UNIQUE pattern. Different seeds must produce noticeably different grooves with different kick placements, hat patterns, and fill choices. Do not repeat the same pattern."
-
+    if request.key or request.scale:
+        key_str = request.key or "C"
+        scale_str = request.scale or "minor"
+        prompt += f"\n\n--- KEY/SCALE ---"
+        prompt += f"\nKey: {key_str} | Scale: {scale_str}"
+        prompt += f"\nALL pitches must be in {key_str} {scale_str}. Do not use out-of-scale notes."
     if request.allowed_pitches:
         allowed = ", ".join(str(p) for p in request.allowed_pitches)
         prompt += f"\nAllowed MIDI pitches: [{allowed}]"
@@ -300,3 +437,31 @@ def build_surprise_user_prompt(preset: Preset, color: float) -> str:
         "- Make it feel like a complete, loopable musical idea\n"
         "The sound_suggestion should describe an ideal drum kit character."
     )
+
+
+def build_refine_prompt(
+    current_notes: list[dict],
+    instruction: str,
+    clip: "ClipInfo",
+    mode: str = "drums",
+    key: str | None = None,
+    scale: str | None = None,
+) -> str:
+    """Build user prompt for the refine/edit endpoint."""
+    from models import ClipInfo  # avoid circular at module level
+
+    clip_length_beats = clip.bars * clip.time_sig_num * (4.0 / clip.time_sig_den)
+    notes_json = json.dumps(current_notes)
+
+    prompt = (
+        f"Current {mode} pattern ({len(current_notes)} notes, {clip.bars} bars):\n"
+        + notes_json
+        + f"\n\nEdit instruction: {instruction}"
+        + f"\n\nClip length: {clip_length_beats} quarter-note beats ({clip.bars} bars)."
+        + f"\nReturn the COMPLETE modified pattern as JSON. Keep everything the user didn't ask to change."
+    )
+
+    if key or scale:
+        prompt += f"\nKey: {key or 'C'} | Scale: {scale or 'minor'}. Keep all pitches in scale."
+
+    return prompt

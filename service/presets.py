@@ -174,6 +174,153 @@ _register(Preset(
 ))
 
 
+# --- Bass Presets ---
+
+_register(Preset(
+    id="bass_deep",
+    name="Deep Bass",
+    defaults=Controls(
+        density=0.50,
+        complexity=0.45,
+        swing=0.12,
+        humanize_ms=3,
+        velocity_jitter=3,
+    ),
+    prompt_template=(
+        "Generate a BASS MIDI pattern.\n"
+        "Style: deep, sub-heavy bass with rhythmic movement. Lock to the kick rhythm.\n"
+        "Use root notes on strong beats, octave shifts for energy, chromatic approach notes for flavor.\n"
+        "Keep it monophonic. Typical range: MIDI 28-48 (low register).\n"
+        "User notes: {USER_PROMPT}\n\n"
+        "Controls:\n"
+        "- density={DENSITY}\n"
+        "- complexity={COMPLEXITY}\n"
+        "Return ONLY JSON matching the schema. Times are in quarter-note beats."
+    ),
+))
+
+_register(Preset(
+    id="bass_melodic",
+    name="Melodic Bass",
+    defaults=Controls(
+        density=0.60,
+        complexity=0.55,
+        swing=0.10,
+        humanize_ms=3,
+        velocity_jitter=3,
+    ),
+    prompt_template=(
+        "Generate a BASS MIDI pattern.\n"
+        "Style: melodic, flowing bass line with musical phrasing. More movement than a typical sub bass.\n"
+        "Use scale tones, passing notes, and occasional octave jumps. Keep monophonic.\n"
+        "Range: MIDI 36-55 (low-mid register).\n"
+        "User notes: {USER_PROMPT}\n\n"
+        "Controls:\n"
+        "- density={DENSITY}\n"
+        "- complexity={COMPLEXITY}\n"
+        "Return ONLY JSON matching the schema. Times are in quarter-note beats."
+    ),
+))
+
+
+# --- Melody Presets ---
+
+_register(Preset(
+    id="melody_atmospheric",
+    name="Atmospheric Lead",
+    defaults=Controls(
+        density=0.40,
+        complexity=0.50,
+        swing=0.08,
+        humanize_ms=4,
+        velocity_jitter=4,
+    ),
+    prompt_template=(
+        "Generate a MELODY/LEAD MIDI pattern.\n"
+        "Style: atmospheric, spacious lead with long sustained notes and gentle movement.\n"
+        "Create a singable, memorable phrase. Use rests and breathing room.\n"
+        "Range: MIDI 60-79 (mid register). Keep primarily monophonic.\n"
+        "User notes: {USER_PROMPT}\n\n"
+        "Controls:\n"
+        "- density={DENSITY}\n"
+        "- complexity={COMPLEXITY}\n"
+        "Return ONLY JSON matching the schema. Times are in quarter-note beats."
+    ),
+))
+
+_register(Preset(
+    id="melody_rhythmic",
+    name="Rhythmic Lead",
+    defaults=Controls(
+        density=0.65,
+        complexity=0.60,
+        swing=0.15,
+        humanize_ms=3,
+        velocity_jitter=3,
+    ),
+    prompt_template=(
+        "Generate a MELODY/LEAD MIDI pattern.\n"
+        "Style: rhythmic, syncopated lead with shorter notes and percussive energy.\n"
+        "Create a hook or riff with repetition and variation. Can use staccato and accents.\n"
+        "Range: MIDI 60-84 (mid-upper register). Primarily monophonic.\n"
+        "User notes: {USER_PROMPT}\n\n"
+        "Controls:\n"
+        "- density={DENSITY}\n"
+        "- complexity={COMPLEXITY}\n"
+        "Return ONLY JSON matching the schema. Times are in quarter-note beats."
+    ),
+))
+
+
+# --- Chord Presets ---
+
+_register(Preset(
+    id="chords_pad",
+    name="Pad Chords",
+    defaults=Controls(
+        density=0.30,
+        complexity=0.35,
+        swing=0.05,
+        humanize_ms=3,
+        velocity_jitter=2,
+    ),
+    prompt_template=(
+        "Generate a CHORD MIDI pattern.\n"
+        "Style: sustained pad chords with smooth voice leading. Warm, lush, atmospheric.\n"
+        "Use 3-4 note voicings (triads and 7ths). Chord changes every 2-4 beats.\n"
+        "Range: MIDI 48-72 (mid register). Long sustained durations (2.0-4.0 beats).\n"
+        "User notes: {USER_PROMPT}\n\n"
+        "Controls:\n"
+        "- density={DENSITY}\n"
+        "- complexity={COMPLEXITY}\n"
+        "Return ONLY JSON matching the schema. Times are in quarter-note beats."
+    ),
+))
+
+_register(Preset(
+    id="chords_stab",
+    name="Rhythmic Stabs",
+    defaults=Controls(
+        density=0.55,
+        complexity=0.50,
+        swing=0.15,
+        humanize_ms=2,
+        velocity_jitter=3,
+    ),
+    prompt_template=(
+        "Generate a CHORD MIDI pattern.\n"
+        "Style: rhythmic chord stabs with syncopation and energy. Short, punchy voicings.\n"
+        "Use 3-4 note voicings. Mix short stabs (0.15-0.5 beats) with occasional held chords.\n"
+        "Range: MIDI 48-72 (mid register).\n"
+        "User notes: {USER_PROMPT}\n\n"
+        "Controls:\n"
+        "- density={DENSITY}\n"
+        "- complexity={COMPLEXITY}\n"
+        "Return ONLY JSON matching the schema. Times are in quarter-note beats."
+    ),
+))
+
+
 def get_preset(preset_id: str) -> Preset | None:
     return PRESETS.get(preset_id)
 

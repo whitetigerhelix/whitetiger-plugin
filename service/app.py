@@ -36,12 +36,15 @@ from models import (
     GenerateRequest,
     GenerateResponse,
     MidiPlan,
+    RefineRequest,
+    RefineResponse,
     SurpriseRequest,
     SurpriseResponse,
     SurpriseResult,
 )
 from presets import get_preset, list_presets
 from prompts import (
+    build_refine_prompt,
     build_surprise_system_prompt,
     build_surprise_user_prompt,
     build_system_prompt,
@@ -264,7 +267,7 @@ def generate(req: GenerateRequest) -> GenerateResponse:
 
     # 2. Build prompts (use effective seed = seed + variation)
     effective_seed = req.seed + req.variation
-    system_prompt = build_system_prompt()
+    system_prompt = build_system_prompt(req.mode)
     user_prompt = build_user_prompt(preset, req, effective_seed=effective_seed)
 
     # 3. Get LLM provider
@@ -349,6 +352,97 @@ def generate(req: GenerateRequest) -> GenerateResponse:
     return GenerateResponse(
         ok=False,
         error=f"Failed after {MAX_LLM_RETRIES} attempts. Last error: {last_error}",
+    )
+
+
+@app.post("/refine", response_model=RefineResponse)
+def refine(req: RefineRequest) -> RefineResponse:
+    """Edit an existing pattern based on a natural-language instruction."""
+    start_time = time.monotonic()
+
+    is_mock = (runtime_config.get_config("SERVICE_MOCK") or "1") == "1"
+    if is_mock:
+        # In mock mode, just return the notes unchanged
+        plan = MidiPlan(
+            version=1,
+            mode=req.mode,
+            bars=req.clip.bars,
+            time_sig_num=req.clip.time_sig_num,
+            time_sig_den=req.clip.time_sig_den,
+            notes=[],
+        )
+        try:
+            from models import NoteEvent
+            for n in req.current_notes:
+                plan.notes.append(NoteEvent(**n))
+        except Exception:
+            pass
+        return RefineResponse(ok=True, summary="refine (mock — notes unchanged)", plan=plan)
+
+    try:
+        provider = get_provider()
+    except ValueError as e:
+        return RefineResponse(ok=False, error=str(e))
+
+    from prompts import REFINE_SYSTEM_PROMPT
+    system_prompt = REFINE_SYSTEM_PROMPT
+    user_prompt = build_refine_prompt(
+        current_notes=req.current_notes,
+        instruction=req.instruction,
+        clip=req.clip,
+        mode=req.mode,
+        key=req.key,
+        scale=req.scale,
+    )
+
+    last_error = ""
+    for attempt in range(1, MAX_LLM_RETRIES + 1):
+        try:
+            result = provider.generate(
+                system_prompt, user_prompt,
+                timeout=LLM_TIMEOUT_SECONDS,
+                model_override=req.model,
+            )
+        except Exception as e:
+            last_error = f"LLM call failed: {e}"
+            log.warning("Refine attempt %d failed: %s", attempt, e)
+            continue
+
+        try:
+            plan = parse_llm_response(result.text, req.clip)
+            plan.mode = req.mode
+        except ValueError as e:
+            last_error = f"Refine parse failed (attempt {attempt}): {e}"
+            log.warning("Refine parse attempt %d failed: %s", attempt, e)
+            continue
+
+        note_count = len(plan.notes)
+        cost = estimate_cost(result.model, result.prompt_tokens, result.completion_tokens)
+        summary = (
+            f"refined {note_count} notes, {plan.bars} bars | "
+            f"{result.provider}:{result.model} | "
+            f"{result.prompt_tokens}+{result.completion_tokens} tokens | "
+            f"${cost:.4f}"
+        )
+
+        duration_ms = int((time.monotonic() - start_time) * 1000)
+        log_usage(
+            provider=result.provider,
+            model=result.model,
+            prompt_tokens=result.prompt_tokens,
+            completion_tokens=result.completion_tokens,
+            estimated_cost_usd=cost,
+            preset_id=req.preset_id or "refine",
+            bars=req.clip.bars,
+            cached=False,
+            duration_ms=duration_ms,
+        )
+
+        return RefineResponse(ok=True, summary=summary, plan=plan)
+
+    return RefineResponse(
+        ok=False,
+        error=f"Refine failed after {MAX_LLM_RETRIES} attempts. Last error: {last_error}",
     )
 
 
