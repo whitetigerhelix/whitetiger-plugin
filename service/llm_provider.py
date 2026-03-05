@@ -118,8 +118,9 @@ class AzureOpenAIProvider(LLMProvider):
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},
             ],
-            temperature=0.7,
-            max_tokens=4096,
+            temperature=0.9,
+            max_tokens=16384,
+            response_format={"type": "json_object"},
         )
         if timeout is not None:
             kwargs["timeout"] = timeout
@@ -128,6 +129,13 @@ class AzureOpenAIProvider(LLMProvider):
 
         choice = response.choices[0]
         usage = response.usage
+
+        if choice.finish_reason == "length":
+            import logging
+            logging.getLogger(__name__).warning(
+                "LLM output was truncated (finish_reason=length). "
+                "Pattern may be incomplete. Consider reducing bars or density."
+            )
 
         return LLMResult(
             text=choice.message.content or "",

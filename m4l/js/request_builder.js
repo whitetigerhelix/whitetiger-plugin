@@ -11,6 +11,7 @@
  * Messages:
  *   set <key_path> <value>  — store a value (e.g., "set controls:density 0.75")
  *   set_json <key_path> <json_string> — store parsed JSON value (arrays/objects)
+ *   remove <key_path>               — remove a field (e.g., "remove reference_pattern")
  *   bang                    — serialize and output the request as JSON
  *   clear                   — reset stored values
  *
@@ -28,6 +29,20 @@ var request = {};
 function clear() {
   request = {};
   post("request_builder: cleared\n");
+}
+
+function remove() {
+  var args = arrayfromargs(arguments);
+  if (args.length < 1) return;
+  var key_path = String(args[0]);
+  var keys = key_path.split(":");
+  var obj = request;
+  for (var i = 0; i < keys.length - 1; i++) {
+    if (typeof obj[keys[i]] !== "object" || obj[keys[i]] === null) return;
+    obj = obj[keys[i]];
+  }
+  delete obj[keys[keys.length - 1]];
+  post("request_builder: removed " + key_path + "\n");
 }
 
 function set() {

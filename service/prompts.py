@@ -8,6 +8,9 @@ Canonical reference: Docs/AI_Groove_Writer_Project_Plan.md sections 11-13.
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 from models import GenerateRequest
 from presets import Preset
 
@@ -199,11 +202,28 @@ def build_user_prompt(
     prompt += f"\nBars: {clip.bars} | Time signature: {clip.time_sig_num}/{clip.time_sig_den} | BPM: {clip.bpm}"
     prompt += f"\nClip length: {clip_length_beats} quarter-note beats."
     prompt += f"\nYou MUST generate notes from beat 0.0 through beat {clip_length_beats - 1}.0 at minimum."
-    prompt += f"\nEvery bar (each {clip.time_sig_num} beats) must contain kick, snare/clap, AND hat notes."
+    prompt += f"\nEvery single bar must contain kick, snare/clap, AND hat notes. No empty bars."
     beats_per_bar = clip.time_sig_num * (4.0 / clip.time_sig_den)
     last_bar_start = (clip.bars - 1) * beats_per_bar
     prompt += f"\nThe last bar (beats {last_bar_start}–{clip_length_beats}) should include a fill leading back to the loop start."
-    prompt += f"\nSeed: {seed}"
+
+    # Make density/complexity have concrete meaning
+    notes_per_bar_estimate = int(4 + controls.density * 12)  # 4-16 notes per bar
+    prompt += f"\n\n--- GENERATION CONTROLS ---"
+    prompt += f"\nDensity: {controls.density:.2f} — target approximately {notes_per_bar_estimate} note events per bar."
+    if controls.density < 0.3:
+        prompt += " Very sparse — lots of space, minimal hits."
+    elif controls.density > 0.7:
+        prompt += " Dense — busy pattern with layered hits."
+
+    prompt += f"\nComplexity: {controls.complexity:.2f}"
+    if controls.complexity < 0.3:
+        prompt += " — keep it simple and repetitive, minimal variation between bars."
+    elif controls.complexity < 0.6:
+        prompt += " — moderate variation, subtle changes across bars, small fill at phrase end."
+    else:
+        prompt += " — high variation between bars, creative fills, evolving pattern, syncopated surprises."
+    prompt += f"\nSeed: {seed} — this seed value means you must generate a UNIQUE pattern. Different seeds must produce noticeably different grooves with different kick placements, hat patterns, and fill choices. Do not repeat the same pattern."
 
     if request.allowed_pitches:
         allowed = ", ".join(str(p) for p in request.allowed_pitches)
@@ -225,16 +245,38 @@ def build_user_prompt(
             prompt += line
         prompt += "\nUse these pitches and tailor the pattern to these specific sounds."
 
+    # Reference pattern: user-provided takes priority, otherwise load from preset library
+    ref_notes = None
+    ref_source = ""
     if request.reference_pattern:
-        import json as _json
-        ref_json = _json.dumps(request.reference_pattern)
+        ref_notes = request.reference_pattern
+        ref_source = "user clip"
+    else:
+        ref_path = Path(__file__).parent / "reference_patterns" / f"{request.preset_id}.json"
+        if ref_path.exists():
+            try:
+                ref_notes = json.loads(ref_path.read_text(encoding="utf-8"))
+                ref_source = "preset library"
+            except Exception:
+                pass
+
+    if ref_notes:
+        ref_pitches = sorted(set(n.get("pitch", 0) for n in ref_notes))
+        ref_count = len(ref_notes)
+
+        # First 4 bars as groove feel sample
+        sample_beats = min(4 * beats_per_bar, max((n.get("start_beats", 0) for n in ref_notes), default=0) + 1)
+        sample_notes = [n for n in ref_notes if n.get("start_beats", 0) < sample_beats]
+        sample_json = json.dumps(sample_notes)
+
         prompt += (
-            "\n\nReference pattern (from a clip the user considers high quality):\n"
-            + ref_json
-            + "\nUse this as a stylistic and structural reference. "
-            "Match its quality level for groove feel, velocity dynamics, "
-            "and instrument layering. Do not copy it exactly — "
-            "create something new inspired by its character."
+            f"\n\nReference groove ({ref_source} — {ref_count} total notes, pitches {ref_pitches}):\n"
+            + sample_json
+            + f"\nThis shows the FEEL and GROOVE PLACEMENT to draw from. "
+            f"Use it as rhythmic inspiration for kick/snare/hat placement and velocity contour. "
+            f"But you MUST generate a COMPLETELY NEW {clip.bars}-bar pattern — "
+            f"do NOT copy these notes. Create an original groove that captures "
+            f"a similar rhythmic character and energy level."
         )
 
     return prompt

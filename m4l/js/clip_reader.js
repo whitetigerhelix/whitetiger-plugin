@@ -8,6 +8,7 @@
  * Outlets:
  *   0: Notes JSON string (array of note objects matching MidiPlan.notes format)
  *   1: Status messages
+ *   2: Clip name string (for display while reference is active)
  *
  * Messages:
  *   read       — read all notes from the highlighted clip
@@ -27,7 +28,7 @@
 
 autowatch = 1;
 inlets = 1;
-outlets = 2;
+outlets = 3;
 
 function bang() {
   read();
@@ -98,6 +99,14 @@ function read() {
 
     outlet(1, "read " + notes.length + " notes from clip");
     outlet(0, JSON.stringify(notes));
+
+    // Output clip name on outlet 2
+    var clip_name = "";
+    try {
+      var raw_name = clip.get("name");
+      if (raw_name) clip_name = String(raw_name);
+    } catch (e) {}
+    outlet(2, clip_name || "unnamed clip");
   } catch (e) {
     outlet(1, "error: " + e.message);
     outlet(0, "[]");
