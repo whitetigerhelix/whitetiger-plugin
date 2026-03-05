@@ -100,9 +100,16 @@ Implementation roadmap for AI Groove Writer. Milestones are roughly sequential, 
 ### Milestone 8: Demo Hardening (in progress)
 
 - [x] Presentation mode polish (horizontal layout, panels, busy indicators)
-- [x] Prompt quality improvements: system prompt with bar-filling rules, velocity dynamics, phrase structure, loop continuity
-- [x] Preset templates improved with explicit bar coverage, velocity ranges, phrase arc guidance
+- [x] Prompt quality improvements: system prompt with bar-filling rules, velocity dynamics, phrase structure, loop continuity, 4-bar few-shot reference
+- [x] Preset templates refactored: style-only guidance, bar/BPM/time-sig constraints moved to authoritative clip constraints section in prompt builder
 - [x] Surprise prompt enhanced for richer, production-ready generated prompts
+- [x] Preset defaults tightened for better musical feel (lower swing/humanize/jitter)
+- [x] Drum fill vocabulary added to system prompt and all preset templates
+- [x] Instrument context scanner (`instrument_scanner.js`): reads Drum Rack pad names, pitches, sample filenames from Live API
+- [x] `instrument_context` field on GenerateRequest, wired into prompt and cache key
+- [x] Clip reader (`clip_reader.js`): reads MIDI notes from highlighted clip in groove JSON format
+- [x] `reference_pattern` field on GenerateRequest: user can supply a real MIDI clip as a quality/style reference for the LLM
+- [x] Validation coverage warning: logs when LLM output doesn't span all configured bars
 - [ ] Prepare demo Ableton Live set with Drum Rack and empty clip slots
 - [ ] Write demo script: 3 presets × 2 variations, under 5 minutes
 - [ ] End-to-end smoke test (full flow from prompt to audible groove)
@@ -174,3 +181,6 @@ Track key decisions and their rationale here as the project evolves.
 | 2026-03-04 | Windows-native setup scripts                              | `setup.ps1`, `configure_env.ps1` with cmd wrappers replace bash-only workflow                                                            |
 | 2026-03-04 | Prompt quality overhaul                                   | System prompt + preset templates enhanced with bar-filling rules, velocity dynamics, phrase structure, loop continuity                   |
 | 2026-03-04 | Server management backend (Milestone 9)                   | `runtime_config.py`, `/config`, `/config/status`, `/shutdown` endpoints implemented with 13 tests                                        |
+| 2026-03-04 | Instrument context scanning                               | `instrument_scanner.js` reads Drum Rack from Live API; LLM tailors patterns to available sounds                                          |
+| 2026-03-04 | Clip reader + reference patterns                          | `clip_reader.js` reads MIDI clips; `reference_pattern` field lets users supply quality references to the LLM                             |
+| 2026-03-04 | Preset templates refactored                               | Bar/BPM/time-sig removed from templates; authoritative clip constraints section in prompt builder prevents conflicts with UI             |

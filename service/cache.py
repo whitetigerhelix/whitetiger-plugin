@@ -32,6 +32,8 @@ def cache_key(request: GenerateRequest) -> str:
             "model": request.model,
             "allowed_pitches": request.allowed_pitches,
             "instrument_hints": request.instrument_hints,
+            "instrument_context": request.instrument_context,
+            "reference_pattern": request.reference_pattern,
         },
         sort_keys=True,
     )

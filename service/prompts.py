@@ -31,22 +31,101 @@ Critical rules:
 - Every note must satisfy: start_beats + dur_beats <= clip_length_beats.
 - Velocity range: 1-127 (never 0). Maximum 5000 notes total.
 - If the user provides allowed pitch constraints, use only those pitches.
+- If instrument context is provided, use those pitch mappings and tailor the pattern to the available sounds.
 
-General MIDI drum pitches:
+General MIDI drum pitches (default if no instrument context):
   kick=36, snare=38, clap=39, closed hat=42, open hat=46, crash=49
   (Also available: low tom=45, mid tom=47, high tom=50, ride=51)
 
 Musical quality rules — these are critical for production-usable output:
-- FILL ALL REQUESTED BARS. Notes must span the entire clip length, not just the first few bars.
-- The pattern must loop seamlessly: beat 0 of the next loop should feel like a natural continuation.
+- EVERY BAR must have notes. A bar with no notes is a failure. The pattern must span from beat 0.0 to the final bar.
+- ALL drum voices (kick, snare, hats at minimum) must be present across ALL bars, not just some of them.
+- The pattern must loop seamlessly: the last beat should set up beat 0 of the next loop (e.g., crash or open hat resolving on the downbeat).
 - Use realistic velocity dynamics: accents on strong beats (100-120), ghost notes softer (40-65), mid-range for groove body (70-95).
-- Kick provides the rhythmic foundation. Snare anchors the backbeat. Hats drive forward motion.
-- Layer multiple drum voices thoughtfully: don't just repeat one instrument, create interplay between kick/snare/hats/percussion.
+- Kick provides the rhythmic foundation — it must appear in every bar. Snare anchors the backbeat — it must appear in every bar. Hats drive forward motion — they must run continuously.
+- Layer multiple drum voices thoughtfully: create interplay between kick/snare/hats/percussion.
 - Use dur_beats realistically: kick/snare hits ~0.25, closed hats ~0.15-0.25, open hats ~0.35-0.5, crashes ~0.5-1.0.
-- Create phrase structure: bars 1-3 establish groove, bar 4 can add subtle variation, bars 5-7 develop, bar 8 can have a fill or turnaround.
-- For longer patterns (16+ bars), create a larger arc: A section (bars 1-8), B section with evolution (bars 9-16).
-- Avoid robotic repetition: introduce small variations in velocity and timing placement across bars.
-- Sparse is often better than busy. Leave space for other instruments."""
+- Create phrase structure with tension and release:
+  - Bars 1-3: establish the core groove
+  - Bar 4: subtle variation (ghost note, hat accent, or brief snare drag)
+  - Bars 5-7: develop with slight evolution (add a percussion accent, shift a kick)
+  - Bar 8: drum fill leading back to bar 1 (snare roll, tom cascade, crash on downbeat of next loop)
+- For longer patterns (16+ bars): A section (bars 1-8) establishes, B section (bars 9-16) evolves with more energy or variation, bar 16 fill resolves to loop.
+- Avoid robotic repetition: introduce small velocity and placement variations across bars to keep listener interest.
+- Sparse is often better than busy. Leave space for other instruments.
+- Energy arc: the groove should breathe — build subtle tension through the phrase, release with the fill, then restart.
+
+Drum fill guidelines (apply when complexity is moderate-to-high or fills are requested):
+- Fills should lead into the next phrase (typically last 1-2 beats of bar 4, 8, 16, etc.)
+- Good fill vocabulary: snare rolls (rapid 16ths on snare with rising velocity), tom cascades (high→mid→low tom descending), open hat lifts, crash on beat 1 of next phrase
+- Keep fills short and purposeful — they punctuate, not dominate
+- Match fill intensity to the groove: subtle grooves get gentle fills, driving grooves get more energetic fills
+
+Reference example (4 bars of atmospheric breakbeat, 4/4 — shows groove + variation + fill + loop point):
+{"version":1,"mode":"drums","bars":4,"time_sig_num":4,"time_sig_den":4,"notes":[
+{"pitch":36,"start_beats":0.0,"dur_beats":0.25,"vel":110,"mute":0},
+{"pitch":42,"start_beats":0.0,"dur_beats":0.15,"vel":80,"mute":0},
+{"pitch":42,"start_beats":0.5,"dur_beats":0.15,"vel":70,"mute":0},
+{"pitch":38,"start_beats":1.0,"dur_beats":0.25,"vel":102,"mute":0},
+{"pitch":42,"start_beats":1.0,"dur_beats":0.15,"vel":82,"mute":0},
+{"pitch":42,"start_beats":1.5,"dur_beats":0.15,"vel":65,"mute":0},
+{"pitch":36,"start_beats":1.75,"dur_beats":0.25,"vel":92,"mute":0},
+{"pitch":42,"start_beats":2.0,"dur_beats":0.15,"vel":78,"mute":0},
+{"pitch":46,"start_beats":2.5,"dur_beats":0.4,"vel":80,"mute":0},
+{"pitch":38,"start_beats":3.0,"dur_beats":0.25,"vel":105,"mute":0},
+{"pitch":42,"start_beats":3.0,"dur_beats":0.15,"vel":76,"mute":0},
+{"pitch":36,"start_beats":3.5,"dur_beats":0.25,"vel":88,"mute":0},
+{"pitch":42,"start_beats":3.5,"dur_beats":0.15,"vel":68,"mute":0},
+{"pitch":36,"start_beats":4.0,"dur_beats":0.25,"vel":108,"mute":0},
+{"pitch":42,"start_beats":4.0,"dur_beats":0.15,"vel":78,"mute":0},
+{"pitch":42,"start_beats":4.5,"dur_beats":0.15,"vel":72,"mute":0},
+{"pitch":38,"start_beats":5.0,"dur_beats":0.25,"vel":100,"mute":0},
+{"pitch":42,"start_beats":5.0,"dur_beats":0.15,"vel":80,"mute":0},
+{"pitch":42,"start_beats":5.5,"dur_beats":0.15,"vel":64,"mute":0},
+{"pitch":36,"start_beats":5.75,"dur_beats":0.25,"vel":94,"mute":0},
+{"pitch":42,"start_beats":6.0,"dur_beats":0.15,"vel":76,"mute":0},
+{"pitch":46,"start_beats":6.5,"dur_beats":0.4,"vel":78,"mute":0},
+{"pitch":38,"start_beats":7.0,"dur_beats":0.25,"vel":104,"mute":0},
+{"pitch":42,"start_beats":7.0,"dur_beats":0.15,"vel":82,"mute":0},
+{"pitch":38,"start_beats":7.5,"dur_beats":0.25,"vel":48,"mute":0},
+{"pitch":42,"start_beats":7.75,"dur_beats":0.15,"vel":70,"mute":0},
+{"pitch":36,"start_beats":8.0,"dur_beats":0.25,"vel":106,"mute":0},
+{"pitch":42,"start_beats":8.0,"dur_beats":0.15,"vel":80,"mute":0},
+{"pitch":42,"start_beats":8.5,"dur_beats":0.15,"vel":74,"mute":0},
+{"pitch":38,"start_beats":9.0,"dur_beats":0.25,"vel":98,"mute":0},
+{"pitch":42,"start_beats":9.0,"dur_beats":0.15,"vel":78,"mute":0},
+{"pitch":39,"start_beats":9.5,"dur_beats":0.25,"vel":60,"mute":0},
+{"pitch":42,"start_beats":9.5,"dur_beats":0.15,"vel":66,"mute":0},
+{"pitch":36,"start_beats":9.75,"dur_beats":0.25,"vel":90,"mute":0},
+{"pitch":42,"start_beats":10.0,"dur_beats":0.15,"vel":76,"mute":0},
+{"pitch":46,"start_beats":10.5,"dur_beats":0.4,"vel":82,"mute":0},
+{"pitch":38,"start_beats":11.0,"dur_beats":0.25,"vel":106,"mute":0},
+{"pitch":42,"start_beats":11.0,"dur_beats":0.15,"vel":80,"mute":0},
+{"pitch":36,"start_beats":11.5,"dur_beats":0.25,"vel":86,"mute":0},
+{"pitch":42,"start_beats":11.5,"dur_beats":0.15,"vel":68,"mute":0},
+{"pitch":36,"start_beats":12.0,"dur_beats":0.25,"vel":104,"mute":0},
+{"pitch":42,"start_beats":12.0,"dur_beats":0.15,"vel":78,"mute":0},
+{"pitch":42,"start_beats":12.5,"dur_beats":0.15,"vel":72,"mute":0},
+{"pitch":38,"start_beats":13.0,"dur_beats":0.25,"vel":96,"mute":0},
+{"pitch":42,"start_beats":13.0,"dur_beats":0.15,"vel":80,"mute":0},
+{"pitch":42,"start_beats":13.5,"dur_beats":0.15,"vel":68,"mute":0},
+{"pitch":38,"start_beats":13.75,"dur_beats":0.15,"vel":55,"mute":0},
+{"pitch":38,"start_beats":14.0,"dur_beats":0.15,"vel":65,"mute":0},
+{"pitch":38,"start_beats":14.25,"dur_beats":0.15,"vel":78,"mute":0},
+{"pitch":38,"start_beats":14.5,"dur_beats":0.15,"vel":90,"mute":0},
+{"pitch":47,"start_beats":14.75,"dur_beats":0.25,"vel":85,"mute":0},
+{"pitch":45,"start_beats":15.0,"dur_beats":0.25,"vel":88,"mute":0},
+{"pitch":45,"start_beats":15.25,"dur_beats":0.25,"vel":80,"mute":0},
+{"pitch":46,"start_beats":15.5,"dur_beats":0.5,"vel":90,"mute":0},
+{"pitch":49,"start_beats":15.75,"dur_beats":0.5,"vel":95,"mute":0}
+]}
+This example demonstrates:
+- Bar 1-2: core groove (kick anchors, snare backbeat, hat 8ths with velocity variation, open hat accents)
+- Bar 3: slight variation (clap layer, subtle shift)
+- Bar 4: drum fill (snare roll with rising velocity → tom cascade → open hat lift → crash resolving to loop)
+- ALL bars have kick, snare, and hats present. No empty bars.
+- Pattern loops: the crash at beat 15.75 resolves when bar 1 kicks in again.
+Use this as a quality and structural reference."""
 
 
 SURPRISE_SYSTEM_PROMPT = """You are an expert music production assistant specializing in drum groove design. You create detailed, production-ready prompt ideas for an AI drum pattern generator.
@@ -116,7 +195,14 @@ def build_user_prompt(
         COMPLEXITY=controls.complexity,
     )
 
-    prompt += f"\n\nClip length: {clip_length_beats} quarter-note beats."
+    prompt += f"\n\n--- CLIP CONSTRAINTS (authoritative, from UI configuration) ---"
+    prompt += f"\nBars: {clip.bars} | Time signature: {clip.time_sig_num}/{clip.time_sig_den} | BPM: {clip.bpm}"
+    prompt += f"\nClip length: {clip_length_beats} quarter-note beats."
+    prompt += f"\nYou MUST generate notes from beat 0.0 through beat {clip_length_beats - 1}.0 at minimum."
+    prompt += f"\nEvery bar (each {clip.time_sig_num} beats) must contain kick, snare/clap, AND hat notes."
+    beats_per_bar = clip.time_sig_num * (4.0 / clip.time_sig_den)
+    last_bar_start = (clip.bars - 1) * beats_per_bar
+    prompt += f"\nThe last bar (beats {last_bar_start}–{clip_length_beats}) should include a fill leading back to the loop start."
     prompt += f"\nSeed: {seed}"
 
     if request.allowed_pitches:
@@ -126,6 +212,30 @@ def build_user_prompt(
     if request.instrument_hints:
         hints = "; ".join(request.instrument_hints)
         prompt += f"\nInstrument/layer hints: {hints}"
+
+    if request.instrument_context:
+        prompt += "\n\nInstrument context (from current Ableton Drum Rack):"
+        for pad in request.instrument_context:
+            pitch = pad.get("pitch", "?")
+            name = pad.get("name", "unknown")
+            sample = pad.get("sample", "")
+            line = f"\n  pitch {pitch}: {name}"
+            if sample:
+                line += f" ({sample})"
+            prompt += line
+        prompt += "\nUse these pitches and tailor the pattern to these specific sounds."
+
+    if request.reference_pattern:
+        import json as _json
+        ref_json = _json.dumps(request.reference_pattern)
+        prompt += (
+            "\n\nReference pattern (from a clip the user considers high quality):\n"
+            + ref_json
+            + "\nUse this as a stylistic and structural reference. "
+            "Match its quality level for groove feel, velocity dynamics, "
+            "and instrument layering. Do not copy it exactly — "
+            "create something new inspired by its character."
+        )
 
     return prompt
 

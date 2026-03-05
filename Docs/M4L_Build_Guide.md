@@ -488,6 +488,49 @@ When you delete and re-create the JS object to pick up new outlet counts, re-wir
 
 ---
 
+## 14. Instrument Scanner + Clip Reader
+
+Two optional JS modules provide richer context to the LLM without additional UI complexity.
+
+### A) Instrument Scanner (`instrument_scanner.js`)
+
+Scans the current track's Drum Rack and outputs pad names, pitches, and sample filenames.
+
+```
+[loadbang] → [message scan] → js instrument_scanner.js
+instrument_scanner outlet 0 → [prepend set_json instrument_context] → request_builder.js
+instrument_scanner outlet 1 → status display (optional)
+```
+
+Also re-scan on Generate so context stays fresh:
+
+```
+[Generate button] → [message scan] → js instrument_scanner.js
+```
+
+The service includes this context in the LLM prompt so it generates notes matching your actual drum sounds.
+
+### B) Clip Reader (`clip_reader.js`)
+
+Reads MIDI notes from the highlighted clip and outputs them in groove JSON format. Use this to capture a pattern you like as a quality reference.
+
+```
+[Read Reference button] → js clip_reader.js
+clip_reader outlet 0 → [prepend set_json reference_pattern] → request_builder.js
+clip_reader outlet 1 → status display (optional)
+```
+
+**Workflow for reference patterns:**
+
+1. Highlight a MIDI clip you consider high quality
+2. Click the Read Reference button
+3. Switch to an empty clip slot
+4. Generate — the LLM uses your reference as a style/quality target
+
+The reference is included in the prompt and cache key, so different references produce different grooves.
+
+---
+
 ## Tips
 
 - **File paths:** If Max can't find `groove_http.js` etc., add `m4l/js/` to Max's search path (Options → File Preferences)

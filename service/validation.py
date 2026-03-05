@@ -126,4 +126,19 @@ def parse_llm_response(text: str, clip: ClipInfo) -> MidiPlan:
         notes=valid_notes,
     )
 
+    # Coverage check: warn if notes don't span all bars
+    if valid_notes:
+        import logging
+        _log = logging.getLogger(__name__)
+        beats_per_bar = clip.time_sig_num * (4.0 / clip.time_sig_den)
+        max_start = max(n.start_beats for n in valid_notes)
+        last_bar_start = (clip.bars - 1) * beats_per_bar
+        if max_start < last_bar_start:
+            covered_bars = int(max_start / beats_per_bar) + 1
+            _log.warning(
+                "LLM output only covers %d of %d bars (last note at beat %.1f, "
+                "expected notes up to beat %.1f)",
+                covered_bars, clip.bars, max_start, last_bar_start,
+            )
+
     return plan

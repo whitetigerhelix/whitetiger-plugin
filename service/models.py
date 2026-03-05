@@ -37,6 +37,8 @@ class GenerateRequest(BaseModel):
     model: str | None = None
     allowed_pitches: list[int] | None = Field(default=None)
     instrument_hints: list[str] | None = Field(default=None)
+    instrument_context: list[dict] | None = Field(default=None)
+    reference_pattern: list[dict] | None = Field(default=None)
 
 
 class NoteEvent(BaseModel):

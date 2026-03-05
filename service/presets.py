@@ -31,25 +31,24 @@ _register(Preset(
     id="breaks_atmos_130",
     name="Atmospheric Breakbeats (130)",
     defaults=Controls(
-        density=0.75,
-        complexity=0.65,
-        swing=0.35,
-        humanize_ms=8,
-        velocity_jitter=6,
+        density=0.70,
+        complexity=0.60,
+        swing=0.20,
+        humanize_ms=4,
+        velocity_jitter=3,
     ),
     prompt_template=(
-        "You are generating a DRUM MIDI pattern for a progressive / atmospheric "
-        "breakbeat track around {BPM} BPM.\n"
+        "Generate a DRUM MIDI pattern for a progressive / atmospheric "
+        "breakbeat style.\n"
         "Style: broken-beat groove, tasteful syncopation, not overcrowded, lots of "
         "space for atmos and bass.\n"
         "Drums (GM): kick(36), snare(38), clap(39 optional), closed hat(42), "
         "open hat(46), crash(49 optional).\n"
-        "Structure: {BARS} bars of {TIME_SIG_NUM}/{TIME_SIG_DEN}. "
-        "YOU MUST fill all {BARS} bars with notes from beat 0 to the final bar. "
-        "The groove must loop seamlessly back to beat 0.\n"
-        "Phrase arc: establish groove bars 1-3, subtle variation bar 4, "
-        "develop bars 5-7, fill or turnaround bar 8. For 16 bars, "
-        "create an A/B structure with evolution.\n"
+        "Phrase arc: establish groove early, subtle variation mid-phrase, "
+        "develop with slight evolution, fill or turnaround at the end. "
+        "For longer patterns, create an A/B structure with evolution.\n"
+        "Fills: use snare drags, ghost-note flurries, open hat lifts, or a short "
+        "tom cascade leading into the next phrase. Keep fills tasteful and brief.\n"
         "Velocity dynamics: kick accents 100-115, ghost snares 40-60, "
         "hat body 70-90 with occasional accents at 95-105.\n"
         "User notes: {USER_PROMPT}\n\n"
@@ -65,23 +64,22 @@ _register(Preset(
     id="breaks_driving",
     name="Progressive Breaks (Driving)",
     defaults=Controls(
-        density=0.80,
-        complexity=0.75,
-        swing=0.28,
-        humanize_ms=6,
-        velocity_jitter=5,
+        density=0.75,
+        complexity=0.70,
+        swing=0.15,
+        humanize_ms=3,
+        velocity_jitter=3,
     ),
     prompt_template=(
-        "You are generating a DRUM MIDI pattern for a driving progressive breakbeat "
-        "track around {BPM} BPM.\n"
+        "Generate a DRUM MIDI pattern for a driving progressive breakbeat style.\n"
         "Style: forward momentum, energetic hats, occasional ride accents, "
         "syncopated but propulsive.\n"
         "Drums (GM): kick(36), snare(38), clap(39 optional), closed hat(42), "
         "open hat(46), ride(51 optional), crash(49 optional).\n"
-        "Structure: {BARS} bars of {TIME_SIG_NUM}/{TIME_SIG_DEN}. "
-        "YOU MUST fill all {BARS} bars. The pattern must loop seamlessly.\n"
         "Phrase arc: build energy through the phrase, fill on the last bar. "
-        "For 16 bars, create an A/B with the B section adding intensity.\n"
+        "For longer patterns, create an A/B with the B section adding intensity.\n"
+        "Fills: use snare rolls with rising velocity, tom runs, crash accents. "
+        "Make fills punchy and propulsive to match the driving energy.\n"
         "Velocity: driving kick at 105-120, snare backbeats 95-110, "
         "hats 75-95 with accent lifts.\n"
         "User notes: {USER_PROMPT}\n\n"
@@ -97,21 +95,20 @@ _register(Preset(
     id="chill_psychill",
     name="Downtempo / Psychill",
     defaults=Controls(
-        density=0.55,
-        complexity=0.45,
-        swing=0.22,
-        humanize_ms=10,
-        velocity_jitter=8,
+        density=0.50,
+        complexity=0.40,
+        swing=0.12,
+        humanize_ms=5,
+        velocity_jitter=4,
     ),
     prompt_template=(
-        "Generate a DRUM MIDI pattern for downtempo/chillout/psychill "
-        "around {BPM} BPM.\n"
+        "Generate a DRUM MIDI pattern for downtempo/chillout/psychill style.\n"
         "Groove: relaxed, airy, sparse, gentle offbeat accents. Softer velocities.\n"
         "Drums (GM): kick(36), snare(38), closed hat(42), open hat(46), "
         "clap(39 optional).\n"
-        "{BARS} bars of {TIME_SIG_NUM}/{TIME_SIG_DEN}. "
-        "YOU MUST fill all {BARS} bars with notes. Loop seamlessly.\n"
         "Even sparse grooves need consistent hat/kick presence across all bars.\n"
+        "Fills: keep minimal — a single ghost snare drag or gentle open hat "
+        "swell at phrase end. Nothing aggressive.\n"
         "Velocity: softer overall (kick 75-95, snare 60-85, hats 50-75). "
         "Ghost notes and gentle accents create texture.\n"
         "User notes: {USER_PROMPT}\n"
@@ -124,22 +121,20 @@ _register(Preset(
     id="four_on_floor",
     name="4-to-the-Floor (House)",
     defaults=Controls(
-        density=0.70,
-        complexity=0.45,
-        swing=0.18,
-        humanize_ms=6,
-        velocity_jitter=5,
+        density=0.65,
+        complexity=0.40,
+        swing=0.10,
+        humanize_ms=3,
+        velocity_jitter=3,
     ),
     prompt_template=(
-        "Generate a DRUM MIDI pattern for 4-to-the-floor house-ish groove "
-        "around {BPM} BPM.\n"
+        "Generate a DRUM MIDI pattern for 4-to-the-floor house-ish groove style.\n"
         "Kick on every beat, clap/snare on 2 and 4. Hats drive forward motion.\n"
         "Drums (GM): kick(36), snare(38), clap(39), closed hat(42), "
         "open hat(46), crash(49 optional).\n"
-        "{BARS} bars of {TIME_SIG_NUM}/{TIME_SIG_DEN}. "
-        "YOU MUST fill all {BARS} bars. Loop seamlessly.\n"
-        "Hats should have consistent 8th or 16th subdivision across all bars. "
-        "Small fill at phrase end.\n"
+        "Hats should have consistent 8th or 16th subdivision across all bars.\n"
+        "Fills: classic house fills — snare/clap roll on beat 4, open hat lift, "
+        "or a single crash on the downbeat of the next phrase.\n"
         "Velocity: kick solid 100-115, clap/snare 90-105, "
         "hats 70-85 with offbeat accents at 85-95.\n"
         "User notes: {USER_PROMPT}\n"
@@ -152,23 +147,22 @@ _register(Preset(
     id="halftime_broken",
     name="Half-Time / Broken (Experimental)",
     defaults=Controls(
-        density=0.60,
-        complexity=0.70,
-        swing=0.30,
-        humanize_ms=9,
-        velocity_jitter=7,
+        density=0.55,
+        complexity=0.60,
+        swing=0.18,
+        humanize_ms=4,
+        velocity_jitter=4,
     ),
     prompt_template=(
-        "Generate a DRUM MIDI pattern with a half-time / broken feel "
-        "around {BPM} BPM.\n"
+        "Generate a DRUM MIDI pattern with a half-time / broken feel.\n"
         "Style: half-time snare feel, syncopated kicks, negative space, "
         "tasteful percussive stutters.\n"
         "Drums (GM): kick(36), snare(38), clap(39 optional), closed hat(42), "
         "open hat(46), crash(49 optional).\n"
-        "{BARS} bars of {TIME_SIG_NUM}/{TIME_SIG_DEN}. "
-        "YOU MUST fill all {BARS} bars. Loop seamlessly.\n"
         "Snare typically on beat 3 (half-time feel). Kicks are syncopated and conversational. "
         "Use space deliberately but maintain presence across all bars.\n"
+        "Fills: use unexpected rhythmic bursts — a tom stutter, rapid hat flurry, "
+        "or ghost snare cascade. Keep fills textural, not bombastic.\n"
         "Velocity: varied and expressive. Kick 85-110, snare 80-105, "
         "ghost hits 35-55, hats 60-85.\n"
         "User notes: {USER_PROMPT}\n\n"
