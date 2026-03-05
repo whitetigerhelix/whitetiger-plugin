@@ -1,14 +1,19 @@
 """FastAPI service for AI Groove Writer.
 
 Endpoints:
-  GET  /health   → {"ok": true}
-  POST /generate → GenerateResponse (mock or real LLM)
-  GET  /presets  → list of available presets
-  GET  /usage    → usage statistics for LLM credit tracking
+  GET  /health        → {"ok": true}
+  POST /generate      → GenerateResponse (mock or real LLM)
+  POST /surprise      → SurpriseResponse (LLM-generated prompt + controls)
+  GET  /presets       → list of available presets
+  GET  /usage         → usage statistics for LLM credit tracking
+  POST /config        → update runtime config (provider, keys, mock mode)
+  GET  /config/status → config status (no secrets)
+  POST /shutdown      → graceful shutdown
 
 Canonical references:
   - Docs/Architecture.md
   - Docs/JSON_Contract.md
+  - Docs/Plan_Server_Management.md
 """
 
 from __future__ import annotations
@@ -25,6 +30,8 @@ from cache import cache_get, cache_key, cache_put
 from llm_provider import estimate_cost, get_provider
 from mock_grooves import get_mock_groove
 from models import (
+    ConfigRequest,
+    ConfigStatusResponse,
     Controls,
     GenerateRequest,
     GenerateResponse,
@@ -42,6 +49,7 @@ from prompts import (
 )
 from usage import get_usage_summary, log_usage
 from validation import parse_llm_response
+import runtime_config
 
 load_dotenv()
 
@@ -108,7 +116,7 @@ def surprise(req: SurpriseRequest) -> SurpriseResponse:
     if preset is None:
         return SurpriseResponse(ok=False, error=f"Unknown preset_id: {req.preset_id}")
 
-    is_mock = os.getenv("SERVICE_MOCK", "1") == "1"
+    is_mock = (runtime_config.get_config("SERVICE_MOCK") or "1") == "1"
 
     if is_mock:
         suggestion = (
@@ -210,7 +218,7 @@ def generate(req: GenerateRequest) -> GenerateResponse:
         )
 
     # Mock mode: return hardcoded groove
-    is_mock = os.getenv("SERVICE_MOCK", "1") == "1"
+    is_mock = (runtime_config.get_config("SERVICE_MOCK") or "1") == "1"
 
     if is_mock:
         summary, notes = get_mock_groove(req.preset_id, req.clip.bars)
@@ -342,3 +350,55 @@ def generate(req: GenerateRequest) -> GenerateResponse:
         ok=False,
         error=f"Failed after {MAX_LLM_RETRIES} attempts. Last error: {last_error}",
     )
+
+
+# --- Config and shutdown endpoints ---
+
+@app.post("/config")
+def update_config(req: ConfigRequest) -> dict:
+    """Update runtime config. Never logs or returns secret values."""
+    updated = 0
+    mapping = {
+        "provider": ("LLM_PROVIDER", req.provider),
+        "azure_endpoint": ("AZURE_OPENAI_ENDPOINT", req.azure_endpoint),
+        "azure_api_key": ("AZURE_OPENAI_API_KEY", req.azure_api_key),
+        "azure_deployment": ("AZURE_OPENAI_DEPLOYMENT", req.azure_deployment),
+        "azure_api_version": ("AZURE_OPENAI_API_VERSION", req.azure_api_version),
+        "anthropic_api_key": ("ANTHROPIC_API_KEY", req.anthropic_api_key),
+        "anthropic_model": ("ANTHROPIC_MODEL", req.anthropic_model),
+    }
+    for field_name, (config_key, value) in mapping.items():
+        if value is not None:
+            runtime_config.set_config(config_key, str(value))
+            updated += 1
+
+    if req.mock_mode is not None:
+        runtime_config.set_config("SERVICE_MOCK", "1" if req.mock_mode else "0")
+        updated += 1
+
+    status = runtime_config.get_config_status()
+    return {"ok": True, "updated": updated, **status}
+
+
+@app.get("/config/status", response_model=ConfigStatusResponse)
+def config_status() -> ConfigStatusResponse:
+    """Return current config status (no secrets)."""
+    return ConfigStatusResponse(**runtime_config.get_config_status())
+
+
+@app.post("/shutdown")
+def shutdown() -> dict:
+    """Graceful shutdown after a short delay so response can be sent."""
+    import signal
+    import threading
+
+    def _delayed_shutdown():
+        time.sleep(0.5)
+        try:
+            os.kill(os.getpid(), signal.SIGINT)
+        except Exception:
+            pass
+
+    if not getattr(app.state, "_testing", False):
+        threading.Thread(target=_delayed_shutdown, daemon=True).start()
+    return {"ok": True, "message": "shutting down"}

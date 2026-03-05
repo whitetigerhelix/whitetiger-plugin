@@ -80,3 +80,21 @@ class SurpriseResponse(BaseModel):
     summary: str = ""
     surprise: SurpriseResult | None = None
     error: str | None = None
+
+
+class ConfigRequest(BaseModel):
+    provider: str | None = None
+    mock_mode: bool | None = None
+    azure_endpoint: str | None = None
+    azure_api_key: str | None = None
+    azure_deployment: str | None = None
+    azure_api_version: str | None = None
+    anthropic_api_key: str | None = None
+    anthropic_model: str | None = None
+
+
+class ConfigStatusResponse(BaseModel):
+    provider: str
+    mock_mode: bool
+    azure_configured: bool
+    anthropic_configured: bool

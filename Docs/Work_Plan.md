@@ -97,27 +97,31 @@ Implementation roadmap for AI Groove Writer. Milestones are roughly sequential, 
 - [x] Provider capability metadata and name normalization in `llm_provider.py`
 - [x] Interactive Claude skills: `whitetiger-plugin-assistant`, `llm-config`, `cloud-provider`, `groove` (polished)
 
-### Milestone 8: Demo Hardening
+### Milestone 8: Demo Hardening (in progress)
 
+- [x] Presentation mode polish (horizontal layout, panels, busy indicators)
+- [x] Prompt quality improvements: system prompt with bar-filling rules, velocity dynamics, phrase structure, loop continuity
+- [x] Preset templates improved with explicit bar coverage, velocity ranges, phrase arc guidance
+- [x] Surprise prompt enhanced for richer, production-ready generated prompts
 - [ ] Prepare demo Ableton Live set with Drum Rack and empty clip slots
 - [ ] Write demo script: 3 presets × 2 variations, under 5 minutes
 - [ ] End-to-end smoke test (full flow from prompt to audible groove)
 - [ ] Acceptance criteria verification (see [Project Plan](AI_Groove_Writer_Project_Plan.md) section 14)
 
-### Milestone 9: Server Management from M4L Device
+### Milestone 9: Server Management from M4L Device ✓
 
-Start/stop the Python service and configure API keys directly from the M4L device — no terminal needed after initial `setup.sh`. Full plan: [Plan_Server_Management.md](Plan_Server_Management.md)
+Start/stop the Python service and configure API keys directly from the M4L device — no terminal needed after initial setup. Full plan: [Plan_Server_Management.md](Plan_Server_Management.md)
 
-- [ ] `service/runtime_config.py` — thread-safe in-memory config store (get/set with env var fallback)
-- [ ] `service/models.py` — add `ConfigRequest`, `ConfigStatusResponse` models
-- [ ] `service/llm_provider.py` — switch `os.getenv()` to `runtime_config.get_config()`
-- [ ] `service/app.py` — add `POST /config`, `GET /config/status`, `POST /shutdown` endpoints
-- [ ] `service/tests/conftest.py` — add `autouse` fixture for `clear_overrides()` cleanup
-- [ ] `service/tests/test_config.py` — tests for config and shutdown endpoints
-- [ ] `m4l/js/groove_http.js` — add `config`, `config_status`, `shutdown` message handlers
-- [ ] `m4l/js/response_router.js` — add outlet for config status routing (current outlet count is 9)
-- [ ] `m4l/js/server_launcher.js` — Node.js child process launcher for Max's `node.script`
-- [ ] Documentation updates (Architecture, Setup Guide, M4L Build Guide)
+- [x] `service/runtime_config.py` — thread-safe in-memory config store (get/set with env var fallback)
+- [x] `service/models.py` — add `ConfigRequest`, `ConfigStatusResponse` models
+- [x] `service/llm_provider.py` — switch `os.getenv()` to `runtime_config.get_config()`
+- [x] `service/app.py` — add `POST /config`, `GET /config/status`, `POST /shutdown` endpoints
+- [x] `service/tests/conftest.py` — add `autouse` fixture for `clear_overrides()` cleanup
+- [x] `service/tests/test_config.py` — tests for config and shutdown endpoints (13 tests)
+- [x] `m4l/js/groove_http.js` — add `config`, `config_status`, `shutdown_service` message handlers
+- [ ] `m4l/js/response_router.js` — add config status response routing (deferred to UI wiring phase)
+- [ ] `m4l/js/server_launcher.js` — Node.js child process launcher (deferred)
+- [ ] Documentation updates for device-side server management UI
 
 ---
 
@@ -168,3 +172,5 @@ Track key decisions and their rationale here as the project evolves.
 | 2026-03-04 | Busy indicator (outlet 8) on response_router              | Visual feedback for Generate/Surprise operations via LED, label color, or panel flash                                                    |
 | 2026-03-04 | UI bars/time-sig authority                                | Validation enforces clip settings from UI, ignoring any conflicting LLM metadata                                                         |
 | 2026-03-04 | Windows-native setup scripts                              | `setup.ps1`, `configure_env.ps1` with cmd wrappers replace bash-only workflow                                                            |
+| 2026-03-04 | Prompt quality overhaul                                   | System prompt + preset templates enhanced with bar-filling rules, velocity dynamics, phrase structure, loop continuity                   |
+| 2026-03-04 | Server management backend (Milestone 9)                   | `runtime_config.py`, `/config`, `/config/status`, `/shutdown` endpoints implemented with 13 tests                                        |

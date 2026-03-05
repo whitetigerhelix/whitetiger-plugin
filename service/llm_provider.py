@@ -12,6 +12,8 @@ import os
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
+import runtime_config
+
 
 @dataclass
 class LLMResult:
@@ -80,10 +82,10 @@ class AzureOpenAIProvider(LLMProvider):
     """Azure OpenAI provider using the openai SDK."""
 
     def __init__(self) -> None:
-        endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
-        api_key = os.getenv("AZURE_OPENAI_API_KEY")
-        deployment = os.getenv("AZURE_OPENAI_DEPLOYMENT")
-        api_version = os.getenv("AZURE_OPENAI_API_VERSION", "2024-02-01")
+        endpoint = runtime_config.get_config("AZURE_OPENAI_ENDPOINT")
+        api_key = runtime_config.get_config("AZURE_OPENAI_API_KEY")
+        deployment = runtime_config.get_config("AZURE_OPENAI_DEPLOYMENT")
+        api_version = runtime_config.get_config("AZURE_OPENAI_API_VERSION") or "2024-02-01"
 
         if not endpoint:
             raise ValueError("AZURE_OPENAI_ENDPOINT environment variable is required")
@@ -199,7 +201,7 @@ def get_provider(provider_name: str | None = None) -> LLMProvider:
 
     Reads LLM_PROVIDER env var if provider_name is not specified.
     """
-    raw_name = provider_name if provider_name is not None else os.getenv("LLM_PROVIDER", "azure")
+    raw_name = provider_name if provider_name is not None else (runtime_config.get_config("LLM_PROVIDER") or "azure")
     name = raw_name.strip().lower()
     provider_cls = _PROVIDERS.get(name)
 

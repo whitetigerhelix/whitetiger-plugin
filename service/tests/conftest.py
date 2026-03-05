@@ -12,6 +12,14 @@ from httpx import ASGITransport, AsyncClient
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from app import app  # noqa: E402
+import runtime_config  # noqa: E402
+
+
+@pytest.fixture(autouse=True)
+def _clear_runtime_overrides():
+    """Reset runtime config overrides after each test for isolation."""
+    yield
+    runtime_config.clear_overrides()
 
 
 @pytest.fixture

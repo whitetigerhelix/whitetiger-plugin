@@ -8,6 +8,9 @@
  * Messages:
  *   generate <json_string>  — POST to /generate
  *   surprise <json_string>  — POST to /surprise
+ *   config <json_string>    — POST to /config
+ *   config_status           — GET /config/status
+ *   shutdown_service        — POST to /shutdown
  *   health                  — GET /health
  *   presets                 — GET /presets
  *   usage                   — GET /usage
@@ -79,6 +82,24 @@ function surprise() {
   post(json_str + "\n");
 
   _post("/surprise", json_str);
+}
+
+function config() {
+  var args = arrayfromargs(arguments);
+  var json_str = args.join(" ");
+  if (!json_str || json_str.length === 0) {
+    outlet(1, "error: config requires a JSON request string");
+    return;
+  }
+  _post("/config", json_str);
+}
+
+function config_status() {
+  _get("/config/status");
+}
+
+function shutdown_service() {
+  _post("/shutdown", "{}");
 }
 
 // --- Internal helpers ---
