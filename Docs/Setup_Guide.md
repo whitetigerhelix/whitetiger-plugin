@@ -1,0 +1,273 @@
+# Setup Guide
+
+## Prerequisites
+
+- **Ableton Live 12.3.5+** (Suite edition, includes Max for Live)
+- **Python 3.12+**
+- **LLM API access** — Azure OpenAI, Anthropic, or other supported provider
+- **Windows 64-bit** (primary development platform)
+- **Git**
+
+## Environment Variables
+
+Create a `.env` file in the `service/` directory (gitignored by default):
+
+```env
+# LLM Provider Configuration
+# --------------------------
+# Azure OpenAI
+AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
+AZURE_OPENAI_API_KEY=your-api-key-here
+AZURE_OPENAI_DEPLOYMENT=gpt-4o
+AZURE_OPENAI_API_VERSION=2024-02-01
+
+# Anthropic (alternative — when provider is switched)
+# ANTHROPIC_API_KEY=your-api-key-here
+# ANTHROPIC_MODEL=claude-sonnet-4-20250514
+
+# Service
+SERVICE_PORT=8787
+SERVICE_MOCK=0
+```
+
+| Variable                   | Description                          | Default      | Required                 |
+| -------------------------- | ------------------------------------ | ------------ | ------------------------ |
+| `AZURE_OPENAI_ENDPOINT`    | Azure OpenAI endpoint URL            | —            | Yes (if using Azure)     |
+| `AZURE_OPENAI_API_KEY`     | Azure OpenAI API key                 | —            | Yes (if using Azure)     |
+| `AZURE_OPENAI_DEPLOYMENT`  | Model deployment name                | —            | Yes (if using Azure)     |
+| `AZURE_OPENAI_API_VERSION` | Azure API version                    | `2024-02-01` | No                       |
+| `ANTHROPIC_API_KEY`        | Anthropic API key                    | —            | Yes (if using Anthropic) |
+| `ANTHROPIC_MODEL`          | Anthropic model ID                   | —            | Yes (if using Anthropic) |
+| `SERVICE_PORT`             | Service listen port                  | `8787`       | No                       |
+| `SERVICE_MOCK`             | Enable mock mode (no LLM calls)      | `1`          | No                       |
+| `LLM_PROVIDER`             | LLM backend (`azure` or `anthropic`) | `azure`      | No                       |
+| `LLM_TIMEOUT_SECONDS`      | Timeout per LLM request (seconds)    | `30`         | No                       |
+
+## First-Time Setup
+
+A setup script handles virtual environment creation, dependency installation, and verification. A virtual environment is required (other Python projects exist on this machine).
+
+### Windows (PowerShell or cmd) — Recommended
+
+```powershell
+cd service
+
+# PowerShell native setup (creates venv, installs deps, copies .env, runs tests)
+.\setup.ps1
+
+# If needed, force a specific Python executable (recommended on machines with many Python installs)
+.\setup.ps1 -Python "C:\Users\<user>\AppData\Local\Programs\Python\Python312\python.exe"
+```
+
+```cmd
+cd service
+setup.cmd
+```
+
+### Bash / Git Bash (Optional)
+
+```bash
+cd service
+./setup.sh
+
+# If your Python 3.12+ isn't default in Bash
+PYTHON="C:/Users/<user>/AppData/Local/Programs/Python/Python312/python.exe" ./setup.sh
+```
+
+The script:
+
+1. Verifies Python 3.12+ is available
+2. Creates `.venv/` virtual environment (if it doesn't exist)
+3. Upgrades pip and installs dependencies from `requirements.txt`
+4. Copies `.env.example` to `.env` (if `.env` doesn't exist yet)
+5. Runs all tests to verify everything works
+
+**Re-run anytime** to update dependencies or verify the environment after pulling changes.
+
+### Why `./setup.sh` opened in an editor
+
+On Windows PowerShell/cmd, `.sh` files are not executed natively unless a Bash shell handles them. If `./setup.sh` opens in an editor, use `setup.ps1` or `setup.cmd` instead.
+
+If you installed Git for Windows, Git Bash is included. It is a Bash terminal that can run `.sh` scripts, but it is optional for this project now that PowerShell/cmd scripts are available.
+
+### Manual Setup
+
+```bash
+cd service
+python -m venv .venv
+
+# Activate (Windows cmd)
+.venv\Scripts\activate
+
+# Activate (Git Bash on Windows)
+source .venv/Scripts/activate
+
+pip install -r requirements.txt
+```
+
+The venv is at `service/.venv/` and is gitignored.
+
+## Azure OpenAI Setup (Beginner Walkthrough)
+
+Use this once to move from mock mode to real AI generation.
+
+1. **Create an Azure subscription**
+   - Sign in at `portal.azure.com`
+   - Ensure your subscription is active and has spending quota
+
+2. **Create a Resource Group**
+   - In Azure Portal: Resource groups → Create
+   - Choose a region near you (for lower latency)
+
+3. **Create an Azure OpenAI resource**
+   - Search for “Azure OpenAI” → Create
+   - Put it in the resource group you just created
+
+4. **Create a model deployment**
+   - Open your Azure OpenAI resource in Azure AI Foundry/Studio
+   - Deploy a chat model (for MVP: `gpt-4o-mini` or `gpt-4o`)
+   - Copy the **deployment name** exactly
+
+5. **Collect required values**
+   - `AZURE_OPENAI_ENDPOINT` (from resource Keys/Endpoint page)
+   - `AZURE_OPENAI_API_KEY` (Key 1 or Key 2)
+   - `AZURE_OPENAI_DEPLOYMENT` (your deployment name)
+   - `AZURE_OPENAI_API_VERSION` (default `2024-02-01` is fine to start)
+
+6. **Configure local service**
+   - Copy `service/.env.example` to `service/.env` if needed
+   - Set:
+     - `LLM_PROVIDER=azure`
+     - `SERVICE_MOCK=0`
+     - Azure vars from step 5
+
+7. **Start and verify**
+   - Start service: `uvicorn app:app --host 127.0.0.1 --port 8787`
+   - Check health: `curl http://127.0.0.1:8787/health`
+   - Generate from the M4L device
+
+8. **Common first errors**
+   - `401 Unauthorized`: wrong API key
+   - `404 Not Found`: wrong deployment name or endpoint
+   - `429 Too Many Requests`: quota/rate-limit hit
+   - timeout: increase `LLM_TIMEOUT_SECONDS`
+
+## Starting the Service
+
+```bash
+# Make sure venv is activated, then:
+cd service
+uvicorn app:app --host 127.0.0.1 --port 8787
+
+# With auto-reload for development
+uvicorn app:app --host 127.0.0.1 --port 8787 --reload
+```
+
+### Health Check
+
+```bash
+curl http://127.0.0.1:8787/health
+# Expected: {"ok": true}
+```
+
+### Mock Mode
+
+For developing the M4L device without making LLM calls:
+
+```bash
+SERVICE_MOCK=1 uvicorn app:app --host 127.0.0.1 --port 8787
+```
+
+### Convenience .env Configuration Script (Windows)
+
+Use these scripts to update `.env` without manual editing.
+
+PowerShell script: `service/configure_env.ps1`  
+cmd wrapper: `service/configure_env.cmd`
+
+Examples:
+
+```powershell
+cd service
+
+# Set Azure provider and core values
+.\configure_env.ps1 -Provider azure -AzureEndpoint "https://<resource>.openai.azure.com/" -AzureApiKey "<key>" -AzureDeployment "gpt-4o-mini" -UseReal
+
+# Switch to mock mode quickly
+.\configure_env.ps1 -UseMock
+
+# Return to real calls
+.\configure_env.ps1 -UseReal
+
+# Tune timeout and port
+.\configure_env.ps1 -LlmTimeoutSeconds 45 -ServicePort 8787
+
+# Show current values (API keys are masked)
+.\configure_env.ps1 -Show
+```
+
+```cmd
+cd service
+configure_env.cmd -UseMock
+configure_env.cmd -UseReal
+```
+
+Mock mode returns hardcoded groove patterns, useful for testing the full pipeline without burning API credits.
+
+## Loading the M4L Device
+
+1. Open Ableton Live 12
+2. Create a MIDI track with a Drum Rack (or any drum instrument)
+3. Drag `m4l/AIGrooveWriter.amxd` onto the MIDI track
+4. Click an empty clip slot or select an existing MIDI clip
+5. Choose a preset, optionally tweak controls
+6. Press **Generate** to preview, then **Apply to Selected Clip** to write
+
+## Running Tests
+
+```bash
+cd service
+pytest -v
+```
+
+## Usage Tracking
+
+The service tracks LLM credit consumption to help monitor costs.
+
+- **Usage log:** `service/usage_log.jsonl` (gitignored) — each LLM call logged with tokens, cost, model, preset
+- **Usage endpoint:** `GET /usage` returns summary stats (total requests, tokens, cost by model and preset)
+- **Presets endpoint:** `GET /presets` returns all available presets with default control values
+
+```bash
+curl http://127.0.0.1:8787/usage
+```
+
+## Troubleshooting
+
+### Service unreachable from Max
+
+1. Confirm the service is running: `curl http://127.0.0.1:8787/health`
+2. Check Windows Firewall — ensure port 8787 is not blocked for localhost
+3. Verify the M4L device is configured to use the correct port
+4. Check the Max console for HTTP error messages
+
+### Generation works but no notes appear in clip
+
+1. Verify the selected slot contains a **MIDI clip** (not an audio clip)
+2. Confirm clip length is computed correctly: `bars × time_sig_num × (4.0 / time_sig_den)`
+3. Check `set_notes` payload format in the Max console
+4. Verify notes are within clip bounds (start + duration ≤ clip length)
+
+### Groove feels off-grid or messy
+
+1. Reduce `humanize_ms` (try 0 to test without humanization)
+2. Lower `swing` value (try 0 for straight timing)
+3. Check that post-processing clamps are not pushing notes past clip end
+4. Verify seed is consistent if expecting reproducible results
+
+### LLM returns invalid JSON
+
+1. Check service logs for the raw LLM response
+2. The service retries on JSON parse failures — check retry count in logs
+3. Verify the prompt template is producing clear JSON-only instructions
+4. Check cached responses in `service/cache/` for debugging
