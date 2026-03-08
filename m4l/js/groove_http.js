@@ -14,6 +14,7 @@
  *   shutdown_service        — POST to /shutdown
  *   health                  — GET /health
  *   presets                 — GET /presets
+ *   options                 — GET /options
  *   usage                   — GET /usage
  *   port <number>           — set service port (default 8787)
  *   host <string>           — set service host (default 127.0.0.1)
@@ -47,6 +48,10 @@ function health() {
 
 function presets() {
   _get("/presets");
+}
+
+function options() {
+  _get("/options");
 }
 
 function usage() {

@@ -72,6 +72,38 @@ def health() -> dict:
     return {"ok": True}
 
 
+@app.get("/options")
+def options() -> dict:
+    """Return available modes, keys, and scales for UI dropdown population."""
+    return {
+        "modes": [
+            {"id": "drums", "name": "Drums"},
+            {"id": "bass", "name": "Bass"},
+            {"id": "melody", "name": "Melody / Lead"},
+            {"id": "chords", "name": "Chords / Harmony"},
+        ],
+        "keys": [
+            {"id": "C", "name": "C"}, {"id": "C#", "name": "C#"},
+            {"id": "D", "name": "D"}, {"id": "D#", "name": "D#"},
+            {"id": "E", "name": "E"}, {"id": "F", "name": "F"},
+            {"id": "F#", "name": "F#"}, {"id": "G", "name": "G"},
+            {"id": "G#", "name": "G#"}, {"id": "A", "name": "A"},
+            {"id": "A#", "name": "A#"}, {"id": "B", "name": "B"},
+        ],
+        "scales": [
+            {"id": "major", "name": "Major"},
+            {"id": "minor", "name": "Minor (Natural)"},
+            {"id": "dorian", "name": "Dorian"},
+            {"id": "mixolydian", "name": "Mixolydian"},
+            {"id": "phrygian", "name": "Phrygian"},
+            {"id": "pentatonic", "name": "Pentatonic"},
+            {"id": "blues", "name": "Blues"},
+            {"id": "harmonic_minor", "name": "Harmonic Minor"},
+            {"id": "melodic_minor", "name": "Melodic Minor"},
+        ],
+    }
+
+
 @app.get("/presets")
 def presets_list() -> list[dict]:
     return list_presets()

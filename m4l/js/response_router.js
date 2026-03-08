@@ -17,10 +17,17 @@
  *   6: Surprise prompt text (wire to prompt UI and request_builder)
  *   7: Surprise request JSON (wire to [prepend surprise] → groove_http)
  *   8: Busy indicator (1 = working, 0 = idle — wire to live.text or live.led)
+ *   9: Mode umenu messages (clear, append — wire to mode umenu)
+ *   10: Key umenu messages (clear, append — wire to key umenu)
+ *   11: Scale umenu messages (clear, append — wire to scale umenu)
+ *   12: Mode/key/scale selection value (format: "set mode drums" etc — wire to request_builder)
  *
  * Messages:
  *   anything      — parse JSON response and route to outlets
  *   select <int>  — look up preset_id by umenu index, output on outlet 4
+ *   select_mode <int>  — look up mode_id by index
+ *   select_key <int>   — look up key_id by index
+ *   select_scale <int> — look up scale_id by index
  *   begin_generate — clear summary and set status to generating
  *   surprise [0-1] — emit SurpriseRequest JSON (preset_id + color)
  *
@@ -29,11 +36,14 @@
 
 autowatch = 1;
 inlets = 1;
-outlets = 9;
+outlets = 13;
 
 var preset_ids = [];
 var preset_defaults = [];
 var last_selected_idx = -1;
+var mode_ids = [];
+var key_ids = [];
+var scale_ids = [];
 
 function anything() {
   var str = arrayfromargs(messagename, arguments).join(" ");
@@ -61,6 +71,12 @@ function anything() {
   // Array → presets response
   if (Array.isArray(resp)) {
     _handle_presets(resp);
+    return;
+  }
+
+  // Options response (has modes/keys/scales)
+  if (resp.modes !== undefined && resp.keys !== undefined) {
+    _handle_options(resp);
     return;
   }
 
@@ -194,4 +210,62 @@ function _handle_surprise(resp) {
   }
   outlet(1, summary);
   outlet(2, "surprise prompt ready");
+}
+
+function _handle_options(resp) {
+  // Populate mode umenu (outlet 9)
+  mode_ids = [];
+  outlet(9, "clear");
+  for (var i = 0; i < resp.modes.length; i++) {
+    mode_ids.push(resp.modes[i].id);
+    outlet(9, "append", resp.modes[i].name);
+  }
+
+  // Populate key umenu (outlet 10)
+  key_ids = [];
+  outlet(10, "clear");
+  for (var i = 0; i < resp.keys.length; i++) {
+    key_ids.push(resp.keys[i].id);
+    outlet(10, "append", resp.keys[i].name);
+  }
+
+  // Populate scale umenu (outlet 11)
+  scale_ids = [];
+  outlet(11, "clear");
+  for (var i = 0; i < resp.scales.length; i++) {
+    scale_ids.push(resp.scales[i].id);
+    outlet(11, "append", resp.scales[i].name);
+  }
+
+  outlet(
+    2,
+    "loaded options (" +
+      resp.modes.length +
+      " modes, " +
+      resp.keys.length +
+      " keys, " +
+      resp.scales.length +
+      " scales)",
+  );
+}
+
+function select_mode(idx) {
+  idx = Math.floor(idx);
+  if (idx >= 0 && idx < mode_ids.length) {
+    outlet(12, "set mode " + mode_ids[idx]);
+  }
+}
+
+function select_key(idx) {
+  idx = Math.floor(idx);
+  if (idx >= 0 && idx < key_ids.length) {
+    outlet(12, "set key " + key_ids[idx]);
+  }
+}
+
+function select_scale(idx) {
+  idx = Math.floor(idx);
+  if (idx >= 0 && idx < scale_ids.length) {
+    outlet(12, "set scale " + scale_ids[idx]);
+  }
 }

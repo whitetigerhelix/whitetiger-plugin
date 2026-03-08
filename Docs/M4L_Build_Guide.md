@@ -531,6 +531,134 @@ The reference is included in the prompt and cache key, so different references p
 
 ---
 
+## 15. Mode / Key / Scale Dropdowns
+
+These work the same way as the preset dropdown — populated from the service on load, no hardcoding in Max.
+
+### Service endpoint
+
+`GET /options` returns all available modes, keys, and scales. Called once on device load alongside `/presets`.
+
+### response_router.js outlets (13 total)
+
+After re-creating the JS object for the new outlet count:
+
+| Outlet | Target                                                 |
+| ------ | ------------------------------------------------------ |
+| 0      | `[prepend process]` → `post_process.js`                |
+| 1      | `[prepend set]` → Summary textedit                     |
+| 2      | `[prepend set]` → Status textedit                      |
+| 3      | Preset umenu (clear/append)                            |
+| 4      | `[prepend set preset_id]` → `request_builder.js`       |
+| 5      | `preset_defaults_unpacker.js` → dials                  |
+| 6      | `[t s s]` → prompt textedit + request_builder          |
+| 7      | `[prepend surprise]` → `groove_http.js`                |
+| 8      | busy indicator (LED / live.text / panel)               |
+| 9      | Mode umenu (clear/append)                              |
+| 10     | Key umenu (clear/append)                               |
+| 11     | Scale umenu (clear/append)                             |
+| 12     | `request_builder.js` (mode/key/scale selection values) |
+
+### Loading on device start
+
+```
+[loadbang]
+   ├──→ [message presets] → groove_http.js    (populates preset umenu via outlet 3)
+   └──→ [message options] → groove_http.js    (populates mode/key/scale via outlets 9/10/11)
+```
+
+### Wiring each dropdown
+
+**Mode umenu:**
+
+```
+response_router outlet 9 → Mode umenu (populates on load)
+Mode umenu → [prepend select_mode] → response_router inlet (user selection)
+response_router outlet 12 → request_builder.js (sends "set mode drums" etc.)
+```
+
+**Key umenu:**
+
+```
+response_router outlet 10 → Key umenu (populates on load)
+Key umenu → [prepend select_key] → response_router inlet (user selection)
+response_router outlet 12 → request_builder.js (sends "set key C" etc.)
+```
+
+**Scale umenu:**
+
+```
+response_router outlet 11 → Scale umenu (populates on load)
+Scale umenu → [prepend select_scale] → response_router inlet (user selection)
+response_router outlet 12 → request_builder.js (sends "set scale minor" etc.)
+```
+
+Outlet 12 is shared by all three — it outputs the formatted `set` message directly to request_builder. One wire from outlet 12 to request_builder handles all mode/key/scale selections.
+
+### Also wire to refine_builder (for co-creation)
+
+```
+Mode umenu  → [prepend mode]  → refine_builder.js
+Key umenu   → ... (via select_key routing above, key is stored in request_builder)
+Scale umenu → ... (via select_scale routing above, scale is stored in request_builder)
+```
+
+---
+
+## 16. Conversational Refine (Co-creation)
+
+Reads the current clip, sends it with an edit instruction to `/refine`, and writes the modified pattern back.
+
+### Objects needed
+
+- `js refine_builder.js` — builds the refine request JSON
+- `js clip_reader.js` — reads current clip notes (already created in section 14)
+- `[Refine]` button
+
+### Wiring
+
+```
+[Refine button] bang
+   ├──→ [message begin_generate] → response_router (busy indicator ON)
+   │
+   ├──→ [message read] → clip_reader.js
+   │                         │ outlet 0 (notes JSON)
+   │                         ▼
+   │                  [prepend notes] → refine_builder.js
+   │
+   └──→ [delay 50] → refine_builder.js bang
+                            │ outlet 0 (request JSON)
+                            ▼
+                     [prepend refine] → groove_http.js
+```
+
+### Feed prompt text as the edit instruction
+
+```
+Prompt textedit → [prepend instruction] → refine_builder.js
+```
+
+This fires whenever the user types. Refine_builder stores it and uses it on bang.
+
+### Feed clip info into refine_builder
+
+```
+Bars numbox  → [prepend bars]  → refine_builder.js
+BPM observer → [prepend bpm]   → refine_builder.js
+```
+
+### Response
+
+The refine response has the same `plan` structure as generate, so it flows through the existing pipeline:
+
+```
+groove_http outlet 0 → response_router → post_process → note_writer
+```
+
+No special response wiring needed.
+
+---
+
 ## Tips
 
 - **File paths:** If Max can't find `groove_http.js` etc., add `m4l/js/` to Max's search path (Options → File Preferences)
